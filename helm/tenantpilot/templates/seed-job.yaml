@@ -1,0 +1,54 @@
+{{- if .Values.seed.enabled }}
+{{- $fullname := include "tenantpilot.fullname" . }}
+# Demo data (tenants, users, connectors, knowledge). Runs after every install/upgrade and
+# converges to the desired state, so it is safe to re-run. Disable in real environments.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $fullname }}-seed
+  labels:
+    {{- include "tenantpilot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: seed
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 6
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "seed") | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "tenantpilot.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: seed
+          image: {{ include "tenantpilot.backendImage" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-c", "python -m apps.api.cli migrate && python -m apps.api.cli seed-demo"]
+          envFrom:
+            - configMapRef: {name: {{ $fullname }}-config}
+            - secretRef: {name: {{ include "tenantpilot.secretName" . }}}
+            - secretRef: {name: {{ include "tenantpilot.migrationsSecretName" . }}}
+          env:
+            - {name: ACME_API_BASE_URL, value: {{ printf "http://%s-mock-customer-api:%v/acme/v1" $fullname .Values.mockCustomerApi.service.port | quote }}}
+            - {name: BETACORP_CRM_DSN, value: {{ printf "postgresql://betacorp_reader@%s:5432/%s" (include "tenantpilot.dbHost" .) .Values.externalDatabase.database | quote }}}
+            {{- with .Values.seed.model }}
+            - {name: SEED_MODEL, value: {{ . | quote }}}
+            {{- end }}
+          resources:
+            requests: {cpu: 50m, memory: 192Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            {{- include "tenantpilot.tmpVolumeMount" . | nindent 12 }}
+            - {name: uploads, mountPath: /data/uploads}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+        {{- include "tenantpilot.uploadsVolume" . | nindent 8 }}
+{{- end }}

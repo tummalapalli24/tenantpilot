@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "tenantpilot.fullname" . }}-config
+  labels: {{- include "tenantpilot.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.environment | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  LOG_FORMAT: json
+  REDIS_URL: {{ ternary (printf "redis://%s-redis:6379/0" (include "tenantpilot.fullname" .)) .Values.externalRedis.url .Values.redis.enabled | quote }}
+  MCP_SERVER_URL: {{ printf "http://%s-mcp:%v/mcp" (include "tenantpilot.fullname" .) .Values.mcp.service.port | quote }}
+  MCP_ALLOWED_HOSTS: {{ list (printf "%s-mcp:*" (include "tenantpilot.fullname" .)) (printf "%s-mcp.%s.svc.cluster.local:*" (include "tenantpilot.fullname" .) .Release.Namespace) "localhost:*" "127.0.0.1:*" | toJson | quote }}
+  PUBLIC_API_URL: {{ printf "http://%s-api:%v" (include "tenantpilot.fullname" .) .Values.api.service.port | quote }}
+  DEFAULT_MODEL: {{ .Values.config.defaultModel | quote }}
+  AGENT_RATE_LIMIT_PER_MINUTE: {{ .Values.config.agentRateLimitPerMinute | quote }}
+  INGEST_MODE: queue
+  OBJECT_STORE: {{ .Values.config.objectStore | quote }}
+  OBJECT_STORE_DIR: /data/uploads
+  S3_BUCKET: {{ .Values.config.s3Bucket | quote }}
+  AWS_REGION: {{ .Values.config.awsRegion | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.config.otelExporterOtlpEndpoint | quote }}
+  CORS_ORIGINS: {{ .Values.config.corsOrigins | toJson | quote }}
+  APP_DB_ROLE: tenantpilot_app

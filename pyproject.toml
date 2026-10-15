@@ -1,0 +1,86 @@
+[project]
+name = "tenantpilot"
+version = "0.1.0"
+description = "Multi-tenant AI deployment platform: onboard a customer, connect their data/APIs, configure an agent, deploy to Kubernetes, observe every run."
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    # API + validation
+    "fastapi>=0.141",
+    "uvicorn[standard]>=0.53",
+    "pydantic>=2.13",
+    "pydantic-settings>=2.15",
+    "python-multipart>=0.0.32",
+    "jsonschema>=4.26",
+    # Data
+    "sqlalchemy[asyncio]>=2.0.54",
+    "asyncpg>=0.31",
+    "alembic>=1.20",
+    "pgvector>=0.5",
+    # Jobs / cache
+    "redis>=8.1",
+    "rq>=2.12",
+    # AI + tools
+    "anthropic>=1.7,<2",
+    "mcp>=2.2,<3",
+    "httpx>=0.28",
+    # Security
+    "pyjwt>=2.14",
+    "cryptography>=50",
+    # Documents
+    "pypdf>=6.19",
+    # Observability
+    "prometheus-client>=0.26",
+    "opentelemetry-api>=1.44",
+    "opentelemetry-sdk>=1.44",
+    "opentelemetry-exporter-otlp-proto-http>=1.44",
+    "opentelemetry-instrumentation-fastapi>=0.65b0",
+    "opentelemetry-instrumentation-httpx>=0.65b0",
+    "opentelemetry-instrumentation-asgi>=0.65b0",
+    "opentelemetry-instrumentation-sqlalchemy>=0.65b0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1",
+    "pytest-asyncio>=1.4",
+    "ruff>=0.16",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["apps*", "services*", "packages*"]
+exclude = ["apps.web*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "integration: needs Postgres + Redis (docker compose up -d postgres redis)",
+]
+filterwarnings = ["ignore::DeprecationWarning:rq.*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["apps/web", "migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "S"]
+ignore = [
+    "S101",   # asserts are fine in tests
+    "S104",   # binding to 0.0.0.0 is intended inside containers
+    "B008",   # FastAPI Depends() in defaults is idiomatic
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S311", "S603", "S607"]
+"apps/api/cli.py" = ["ASYNC240", "S608"]
+"seed/**" = ["S105", "S106"]
+"evals/**" = ["S311"]

@@ -1,0 +1,7 @@
+apiVersion: v2
+name: tenantpilot
+description: Multi-tenant AI deployment platform - API, agent runtime, MCP server, worker and web control plane.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [ai-agents, mcp, multi-tenant, rag]

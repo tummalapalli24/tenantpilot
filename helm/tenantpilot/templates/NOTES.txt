@@ -1,0 +1,16 @@
+TenantPilot {{ .Chart.AppVersion }} deployed to namespace {{ .Release.Namespace }} ({{ .Values.environment }}).
+
+Watch the rollout:
+  kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "tenantpilot.fullname" . }}-api
+  kubectl -n {{ .Release.Namespace }} get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+
+{{- if .Values.ingress.enabled }}
+Open the UI via the ingress{{ with .Values.ingress.host }} at http://{{ . }}{{ end }} (kind: http://localhost:8080).
+{{- else }}
+Port-forward the UI:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "tenantpilot.fullname" . }}-web 3000:{{ .Values.web.service.port }}
+{{- end }}
+{{- if .Values.seed.enabled }}
+Demo login: admin@tenantpilot.dev / tenantpilot-demo
+{{- end }}
+Smoke test: helm test {{ .Release.Name }} -n {{ .Release.Namespace }}

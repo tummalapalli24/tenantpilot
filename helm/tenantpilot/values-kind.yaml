@@ -1,0 +1,26 @@
+# Local Kubernetes (kind). Images are built locally and side-loaded with `kind load`.
+environment: kind
+image:
+  repository: tenantpilot-backend
+  tag: local
+  pullPolicy: Never
+webImage:
+  repository: tenantpilot-web
+  tag: local
+  pullPolicy: Never
+api:
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+mcp:
+  replicaCount: 2
+ingress:
+  enabled: true
+  className: traefik
+  host: ""
+seed:
+  enabled: true
+  model: offline-heuristic
+networkPolicy:
+  enabled: true

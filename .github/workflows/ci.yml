@@ -1,0 +1,139 @@
+# Pull-request pipeline: lint -> unit tests -> integration tests -> build.
+# Also called by deploy.yml (workflow_call) so main is never deployed without it.
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    name: Lint (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  web:
+    name: Web (typecheck, lint, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npx next typegen
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm run build
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run pytest tests/unit -q
+
+  integration:
+    name: Integration + security tests (Postgres/pgvector, Redis, MCP)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: tenantpilot
+          POSTGRES_PASSWORD: owner-password
+          POSTGRES_DB: tenantpilot
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U tenantpilot"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Integration, tenant-isolation and failure-mode tests
+        run: uv run pytest tests/integration -q
+      - name: Migrations match the ORM models (drift check)
+        run: |
+          uv run python -m apps.api.cli migrate
+          uv run alembic check
+
+  helm:
+    name: Helm chart (lint, render, schema-validate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+        with:
+          version: v4.3.0
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+      - name: Lint and validate every environment overlay
+        run: |
+          for values in values.yaml values-kind.yaml values-prod.yaml; do
+            echo "::group::$values"
+            helm lint helm/tenantpilot -f "helm/tenantpilot/$values"
+            helm template tp helm/tenantpilot -f "helm/tenantpilot/$values" \
+              | kubeconform -strict -summary -kubernetes-version 1.33.0 -
+            echo "::endgroup::"
+          done
+
+  docker:
+    name: Build images
+    needs: [lint, unit]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - {name: backend, context: ".", file: docker/backend.Dockerfile}
+          - {name: web, context: apps/web, file: apps/web/Dockerfile}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: false
+          tags: tenantpilot-${{ matrix.name }}:ci
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}

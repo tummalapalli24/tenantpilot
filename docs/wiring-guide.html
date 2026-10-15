@@ -1,0 +1,1549 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TenantPilot Wiring Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+  :root {
+    --bg: #f5f6fa;
+    --surface: #ffffff;
+    --surface-2: #eef0f6;
+    --ink: #111827;
+    --ink-2: #374151;
+    --muted: #667085;
+    --line: #dadfe8;
+    --line-strong: #aab3c5;
+    --accent: #4f46e5;
+    --accent-ink: #4338ca;
+    --accent-soft: #eceeff;
+    --mcp: #0369a1;
+    --mcp-soft: #e2f0f9;
+    --ok: #047857;
+    --ok-soft: #e3f4ec;
+    --warn: #b45309;
+    --warn-soft: #fcf1df;
+    --bad: #be123c;
+    --bad-soft: #fce8ec;
+    --code-bg: #eef0f6;
+    --code-ink: #1f2937;
+    --font-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0e16;
+      --surface: #121724;
+      --surface-2: #1a2031;
+      --ink: #e8ebf4;
+      --ink-2: #c1c8d8;
+      --muted: #8d96ab;
+      --line: #252d41;
+      --line-strong: #414b66;
+      --accent: #8e91fa;
+      --accent-ink: #a9acff;
+      --accent-soft: #1e2244;
+      --mcp: #4cc3f5;
+      --mcp-soft: #102a3a;
+      --ok: #3ccf95;
+      --ok-soft: #0e2a20;
+      --warn: #f5b93b;
+      --warn-soft: #2d230c;
+      --bad: #fb7a91;
+      --bad-soft: #301420;
+      --code-bg: #0d1220;
+      --code-ink: #d9deeb;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0e16;
+    --surface: #121724;
+    --surface-2: #1a2031;
+    --ink: #e8ebf4;
+    --ink-2: #c1c8d8;
+    --muted: #8d96ab;
+    --line: #252d41;
+    --line-strong: #414b66;
+    --accent: #8e91fa;
+    --accent-ink: #a9acff;
+    --accent-soft: #1e2244;
+    --mcp: #4cc3f5;
+    --mcp-soft: #102a3a;
+    --ok: #3ccf95;
+    --ok-soft: #0e2a20;
+    --warn: #f5b93b;
+    --warn-soft: #2d230c;
+    --bad: #fb7a91;
+    --bad-soft: #301420;
+    --code-bg: #0d1220;
+    --code-ink: #d9deeb;
+    color-scheme: dark;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent-ink); text-underline-offset: 3px; }
+  a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  code, pre, kbd { font-family: var(--font-mono); }
+  code {
+    font-size: 0.86em;
+    background: var(--surface-2);
+    color: var(--ink);
+    padding: 0.08em 0.36em;
+    border-radius: 5px;
+  }
+  pre {
+    margin: 0;
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+  .wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 40px 72px;
+  }
+  .layout { display: block; }
+  .rail { margin-block: 20px 8px; }
+  .rail ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+  }
+  .rail a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink-2);
+    font-size: 13.5px;
+    text-decoration: none;
+  }
+  .rail a[aria-current="true"] { color: var(--accent-ink); border-color: var(--accent); }
+  @media (min-width: 1100px) {
+    .layout {
+      display: grid;
+      grid-template-columns: 176px minmax(0, 1fr);
+      gap: 48px;
+      align-items: start;
+    }
+    .rail {
+      position: sticky;
+      top: calc(env(safe-area-inset-top, 0px) + 28px);
+      margin: 0;
+      padding-top: 6px;
+    }
+    .rail-title {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .rail ol { flex-direction: column; gap: 2px; }
+    .rail a {
+      border: 0;
+      background: none;
+      padding: 5px 0;
+      border-radius: 0;
+    }
+    .rail a::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--line-strong);
+      flex: none;
+    }
+    .rail a[aria-current="true"] { font-weight: 600; }
+    .rail a[aria-current="true"]::before { background: var(--accent); }
+  }
+  @media (max-width: 1099px) { .rail-title { display: none; } }
+
+  header.top { max-width: 900px; }
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    margin: 0 0 14px;
+  }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+  h1 {
+    font-size: clamp(34px, 5.2vw, 52px);
+    line-height: 1.04;
+    font-weight: 700;
+    letter-spacing: -0.012em;
+  }
+  h1 em { font-style: normal; color: var(--accent-ink); }
+  .lead {
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    max-width: 64ch;
+    margin: 16px 0 0;
+  }
+  .facts {
+    list-style: none;
+    margin: 26px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .facts li { display: flex; align-items: baseline; gap: 8px; }
+  .facts .n {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  main section {
+    padding-block: 60px 4px;
+    scroll-margin-top: 20px;
+  }
+  main section + section { border-top: 1px solid var(--line); margin-top: 52px; }
+  .path {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+  h2 {
+    font-size: clamp(27px, 3.3vw, 34px);
+    line-height: 1.12;
+    font-weight: 700;
+    letter-spacing: -0.008em;
+  }
+  h3 { font-size: 19px; line-height: 1.25; font-weight: 600; }
+  .prose p { max-width: 68ch; margin: 12px 0 0; }
+
+  figure.fig {
+    margin: 26px 0 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 16px 14px;
+  }
+  .fig-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  figcaption {
+    margin-top: 12px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted);
+    max-width: 78ch;
+  }
+  .fig-row { display: grid; gap: 18px; margin-top: 26px; }
+  .fig-row figure.fig { margin: 0; }
+  @media (min-width: 900px) {
+    figure.fig.side {
+      display: grid;
+      grid-template-columns: minmax(0, var(--side, 520px)) minmax(0, 1fr);
+      gap: 28px;
+      align-items: center;
+    }
+    figure.fig.side figcaption { margin-top: 0; }
+  }
+
+  /* ---------- diagrams ---------- */
+  .dg {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-width: var(--min, 700px);
+    color: var(--ink);
+    font-family: var(--font-body);
+  }
+  .dg .box { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.2; }
+  .dg .box.soft { fill: var(--surface-2); }
+  .dg .box.acc { fill: var(--accent-soft); stroke: var(--accent); }
+  .dg .box.mcpb { fill: var(--mcp-soft); stroke: var(--mcp); }
+  .dg .box.ok { fill: var(--ok-soft); stroke: var(--ok); }
+  .dg .box.warn { fill: var(--warn-soft); stroke: var(--warn); }
+  .dg .box.bad { fill: var(--bad-soft); stroke: var(--bad); }
+  .dg .box.dash { stroke-dasharray: 5 4; }
+  .dg .boundary { fill: none; stroke: var(--line-strong); stroke-width: 1.2; stroke-dasharray: 6 5; }
+  .dg .t { fill: var(--ink); font-size: 14px; font-weight: 600; }
+  .dg .tm { fill: var(--ink); font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; }
+  .dg .s { fill: var(--muted); font-family: var(--font-mono); font-size: 11px; }
+  .dg .big { fill: var(--ink); font-family: var(--font-display); font-size: 27px; font-weight: 700; }
+  .dg .e { fill: none; stroke: var(--ink-2); stroke-width: 1.4; }
+  .dg .e.dash { stroke-dasharray: 5 4; }
+  .dg .e.ok { stroke: var(--ok); stroke-width: 1.8; }
+  .dg .e.bad { stroke: var(--bad); stroke-width: 1.8; }
+  .dg .e.acc { stroke: var(--accent); stroke-width: 2.2; }
+  .dg .l {
+    fill: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    paint-order: stroke;
+    stroke: var(--surface);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+  }
+  .dg .l.ok { fill: var(--ok); }
+  .dg .l.bad { fill: var(--bad); }
+  .dg .l.acc { fill: var(--accent-ink); }
+  .dg .mk { fill: var(--ink-2); }
+  .dg .mk.ok { fill: var(--ok); }
+  .dg .mk.bad { fill: var(--bad); }
+  .dg .mk.acc { fill: var(--accent); }
+  .dg .x { fill: none; stroke: var(--bad); stroke-width: 2.4; stroke-linecap: round; }
+  .dg .life { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 4; }
+  .dg .frame { fill: none; stroke: var(--line-strong); stroke-width: 1; }
+  .dg .frame-tab { fill: var(--surface-2); stroke: var(--line-strong); stroke-width: 1; }
+  .dg .dot { fill: var(--accent); }
+  .dg .wall { fill: var(--ink-2); }
+  .dg .wall.gap { fill: none; stroke: var(--bad); stroke-width: 1.4; stroke-dasharray: 4 4; }
+  .dg .wt { fill: var(--ink); font-size: 12.5px; font-weight: 600; }
+  .dg .span.api { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1; }
+  .dg .span.mcp { fill: var(--mcp-soft); stroke: var(--mcp); stroke-width: 1; }
+  .dg .tree { fill: none; stroke: var(--line-strong); stroke-width: 1.2; }
+  .dg .bnd { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 6 5; }
+  .dg .seg { stroke: var(--surface); stroke-width: 2; }
+  .dg .seg.sys { fill: var(--muted); }
+  .dg .seg.req { fill: var(--ink-2); }
+  .dg .seg.kn { fill: var(--accent); }
+  .dg .seg.free { fill: var(--accent-soft); }
+  .dg .seg.tool { fill: var(--mcp-soft); }
+  .dg .seg.slack { fill: var(--surface-2); }
+  .dg .bar-edge { fill: none; stroke: var(--line-strong); stroke-width: 1; }
+  .dg .v { fill: var(--ink-2); font-family: var(--font-mono); font-size: 12px; }
+  .dg .v .vb { fill: var(--ink); font-weight: 500; }
+  .dg .num { fill: var(--surface-2); stroke: var(--line-strong); stroke-width: 1; }
+  .dg .numt { fill: var(--ink-2); font-family: var(--font-mono); font-size: 10px; font-weight: 500; }
+  .dg .rowt { fill: var(--muted); font-family: var(--font-mono); font-size: 11.5px; }
+
+  /* interactive diagrams */
+  .map .node { cursor: pointer; }
+  .map .node .box { transition: fill .15s, stroke .15s; }
+  .map .node.is-on > .box { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  .map .node:focus { outline: none; }
+  .map .node:focus-visible > .box { stroke: var(--accent); stroke-width: 2.6; }
+  .seq .msg { transition: opacity .15s; }
+  .seq.has-on .msg:not(.is-on) { opacity: 0.26; }
+  .seq .msg.is-on .e { stroke: var(--accent); stroke-width: 2.2; marker-end: url(#sAacc); }
+  .seq .msg.is-on .l { fill: var(--accent-ink); }
+  .seq .msg.is-on .num { fill: var(--accent); stroke: var(--accent); }
+  .seq .msg.is-on .numt { fill: var(--surface); }
+
+  /* ---------- tables ---------- */
+  .tbl-wrap {
+    overflow-x: auto;
+    margin-top: 22px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td {
+    text-align: left;
+    vertical-align: top;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  th {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+  td.comp { font-weight: 600; white-space: nowrap; }
+  td.where { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+  tr[data-map] { cursor: pointer; transition: background .15s; }
+  tr[data-map].is-on { background: var(--accent-soft); }
+  tr[data-map].is-on td.comp { color: var(--accent-ink); }
+  .lessons td:first-child { font-weight: 600; min-width: 190px; }
+  .lessons td:last-child { color: var(--ink-2); min-width: 220px; }
+  .lessons td { min-width: 200px; }
+
+  /* ---------- cards ---------- */
+  .phases {
+    display: grid;
+    gap: 14px;
+    margin-top: 20px;
+  }
+  @media (min-width: 760px) { .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .phase {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px 16px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .phase.wide { grid-column: 1 / -1; }
+  .phase.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .phase .hops {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .phase h3 { margin-top: 4px; }
+  .phase p { margin: 8px 0 0; font-size: 15px; color: var(--ink-2); }
+  .phase pre { margin-top: 10px; }
+
+  .gates {
+    display: grid;
+    gap: 12px;
+    margin-top: 24px;
+    counter-reset: gate;
+  }
+  @media (min-width: 620px) { .gates { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1180px) { .gates { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .gate {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px 16px;
+  }
+  .gate .g-n { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); letter-spacing: 0.04em; }
+  .gate h3 { margin-top: 4px; }
+  .gate p { margin: 8px 0 0; font-size: 14.5px; color: var(--ink-2); }
+  .gate.stop { border-color: var(--warn); background: var(--warn-soft); }
+
+  .split { display: grid; gap: 18px; margin-top: 24px; }
+  @media (min-width: 900px) { .split { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
+  .notes { display: grid; gap: 12px; align-content: start; }
+  .note {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 16px 14px;
+    font-size: 14.5px;
+    color: var(--ink-2);
+  }
+  .note b { color: var(--ink); font-weight: 600; }
+
+  .steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+    display: grid;
+    gap: 10px;
+    align-content: start;
+  }
+  .steps li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 10px;
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+  .steps li::before {
+    content: counter(step);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-2);
+    background: var(--surface);
+    margin-top: 1px;
+  }
+
+  .cards3 { display: grid; gap: 14px; margin-top: 18px; }
+  @media (min-width: 760px) { .cards3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .cards2 { display: grid; gap: 14px; margin-top: 18px; }
+  @media (min-width: 760px) { .cards2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px 16px;
+  }
+  .card h3 { font-size: 17px; }
+  .card p { margin: 6px 0 0; font-size: 14.5px; color: var(--ink-2); }
+
+  .status { display: grid; gap: 16px; margin-top: 22px; }
+  @media (min-width: 820px) { .status { grid-template-columns: 1fr 1fr; } }
+  .status .col {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px 18px;
+  }
+  .status h3 { display: flex; align-items: center; gap: 10px; }
+  .status ul { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
+  .status li {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 10px;
+    font-size: 14.5px;
+    color: var(--ink-2);
+  }
+  .ic { width: 18px; height: 18px; margin-top: 2px; }
+  .ic circle { fill: none; stroke-width: 1.5; }
+  .ic path { fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .ic.ok circle, .ic.ok path { stroke: var(--ok); }
+  .ic.todo circle, .ic.todo path { stroke: var(--warn); }
+  .pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .pill.ok { color: var(--ok); background: var(--ok-soft); }
+  .pill.todo { color: var(--warn); background: var(--warn-soft); }
+
+  dl.story { margin: 22px 0 0; display: grid; gap: 0; border-top: 1px solid var(--line); }
+  dl.story div {
+    display: grid;
+    gap: 4px 24px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  @media (min-width: 720px) { dl.story div { grid-template-columns: 150px minmax(0, 1fr); } }
+  dl.story dt { font-family: var(--font-display); font-weight: 600; font-size: 18px; }
+  dl.story dd { margin: 0; color: var(--ink-2); max-width: 72ch; }
+
+  footer.end {
+    margin-top: 64px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+  }
+
+  /* grid children must be allowed to shrink below their widest pre/svg */
+  .layout > *, .phases > *, .gates > *, .split > *, .fig-row > *,
+  .cards3 > *, .status > *, .notes > * { min-width: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="kicker">Forward-deployed engineering portfolio &#183; project 1 of 3 &#183; built and verified 21 Sep 2026</p>
+    <h1>How <em>TenantPilot</em> is wired</h1>
+    <p class="lead">TenantPilot onboards a customer, connects their systems, runs a governed AI agent against them and ships the whole thing to Kubernetes. This page shows the machinery: one question traced through the system, the walls between tenants, the gates on every tool call, the context budget, and the path from commit to cluster.</p>
+    <ul class="facts" aria-label="Verification summary">
+      <li><span class="n">83</span> tests passing</li>
+      <li><span class="n">10/10</span> agent evals</li>
+      <li><span class="n">103</span> spans in one trace</li>
+      <li><span class="n">26</span> Kubernetes objects</li>
+    </ul>
+  </header>
+
+  <div class="layout">
+    <nav class="rail" aria-label="Sections">
+      <span class="rail-title">On this page</span>
+      <ol>
+        <li><a href="#map">System map</a></li>
+        <li><a href="#request">One question</a></li>
+        <li><a href="#isolation">Tenant walls</a></li>
+        <li><a href="#tools">Tool gates</a></li>
+        <li><a href="#context">Context budget</a></li>
+        <li><a href="#mapping">Customer data</a></li>
+        <li><a href="#trace">Tracing</a></li>
+        <li><a href="#delivery">Commit to cluster</a></li>
+        <li><a href="#lessons">What broke</a></li>
+        <li><a href="#status">Status</a></li>
+        <li><a href="#story">Interview story</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <!-- ============================================================ map -->
+      <section id="map" style="padding-top: 36px;">
+        <p class="path">apps/ &#183; services/ &#183; packages/</p>
+        <h2>What talks to what</h2>
+        <p class="lead">Ten parts, with a hard line around the two the customer owns. Point at a component, in the drawing or the table, to see its job and where it lives in the repo.</p>
+
+        <figure class="fig">
+          <div class="fig-scroll">
+            <svg class="dg map" viewBox="0 40 1060 472" style="--min: 860px" role="group" aria-labelledby="map-cap">
+              <defs>
+                <marker id="mA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk" d="M0,1 L9,5 L0,9 z"/></marker>
+              </defs>
+              <rect class="boundary" x="902" y="196" width="150" height="170" rx="12"/>
+              <text class="s" x="977" y="213" text-anchor="middle">customer-owned</text>
+
+              <line class="e" x1="156" y1="208" x2="254" y2="208" marker-end="url(#mA)"/>
+              <text class="l" x="205" y="200" text-anchor="middle">/api/*</text>
+              <text class="l" x="205" y="225" text-anchor="middle">JWT &#183; tenant</text>
+
+              <line class="e" x1="468" y1="128" x2="596" y2="128" marker-start="url(#mA)" marker-end="url(#mA)"/>
+              <text class="l" x="533" y="120" text-anchor="middle">prompt + tools</text>
+              <text class="l" x="533" y="145" text-anchor="middle">tool_use &#183; answer</text>
+
+              <line class="e" x1="468" y1="272" x2="596" y2="272" marker-end="url(#mA)"/>
+              <text class="l" x="533" y="264" text-anchor="middle">tools/call</text>
+              <text class="l" x="533" y="289" text-anchor="middle">service token</text>
+
+              <line class="e" x1="794" y1="250" x2="912" y2="250" marker-end="url(#mA)"/>
+              <text class="l" x="848" y="242" text-anchor="middle">REST + key</text>
+
+              <line class="e" x1="794" y1="306" x2="912" y2="306" marker-end="url(#mA)"/>
+              <text class="l" x="848" y="298" text-anchor="middle">read-only SQL</text>
+
+              <line class="e" x1="330" y1="348" x2="330" y2="422" marker-end="url(#mA)"/>
+              <text class="l" x="339" y="381">tenant_session</text>
+              <text class="l" x="339" y="397">RLS-scoped</text>
+
+              <line class="e" x1="630" y1="320" x2="630" y2="422" marker-end="url(#mA)"/>
+              <text class="l" x="639" y="381">connectors &#183; secrets</text>
+              <text class="l" x="639" y="397">knowledge search</text>
+
+              <line class="e" x1="256" y1="332" x2="158" y2="332" marker-end="url(#mA)"/>
+              <text class="l" x="207" y="324" text-anchor="middle">jobs &#183; limits</text>
+
+              <line class="e" x1="86" y1="360" x2="86" y2="422" marker-end="url(#mA)"/>
+              <text class="l" x="95" y="395">ingest job</text>
+
+              <line class="e" x1="156" y1="460" x2="254" y2="460" marker-end="url(#mA)"/>
+              <text class="l" x="205" y="452" text-anchor="middle">embeddings</text>
+
+              <g class="node" data-map="web" tabindex="0" role="button" aria-label="Web UI">
+                <rect class="box" x="16" y="176" width="140" height="64" rx="10"/>
+                <text class="t" x="86" y="204" text-anchor="middle">Web UI</text>
+                <text class="s" x="86" y="223" text-anchor="middle">Next.js 16</text>
+              </g>
+              <g class="node" data-map="api" tabindex="0" role="button" aria-label="Control-plane API">
+                <rect class="box" x="256" y="56" width="212" height="292" rx="12"/>
+                <text class="t" x="362" y="82" text-anchor="middle">Control-plane API</text>
+                <text class="s" x="362" y="100" text-anchor="middle">FastAPI &#183; auth &#183; RBAC</text>
+              </g>
+              <g class="node" data-map="runtime" tabindex="0" role="button" aria-label="Agent runtime">
+                <rect class="box soft" x="272" y="116" width="180" height="216" rx="10"/>
+                <text class="t" x="362" y="142" text-anchor="middle">Agent runtime</text>
+                <rect class="dot" x="290" y="167" width="5" height="5"/>
+                <text class="s" x="303" y="172">ContextBuilder</text>
+                <rect class="dot" x="290" y="191" width="5" height="5"/>
+                <text class="s" x="303" y="196">tool policy</text>
+                <rect class="dot" x="290" y="215" width="5" height="5"/>
+                <text class="s" x="303" y="220">approval gate</text>
+                <rect class="dot" x="290" y="239" width="5" height="5"/>
+                <text class="s" x="303" y="244">trace recorder</text>
+                <text class="s" x="362" y="304" text-anchor="middle">state &#8594; agent_runs</text>
+              </g>
+              <g class="node" data-map="llm" tabindex="0" role="button" aria-label="LLM">
+                <rect class="box" x="598" y="96" width="196" height="64" rx="10"/>
+                <text class="t" x="696" y="123" text-anchor="middle">LLM</text>
+                <text class="s" x="696" y="142" text-anchor="middle">Claude Opus 5 &#183; offline</text>
+              </g>
+              <g class="node" data-map="mcp" tabindex="0" role="button" aria-label="MCP server">
+                <rect class="box" x="598" y="224" width="196" height="96" rx="10"/>
+                <text class="t" x="696" y="252" text-anchor="middle">MCP server</text>
+                <text class="s" x="696" y="274" text-anchor="middle">4 tools &#183; JSON Schema</text>
+                <text class="s" x="696" y="292" text-anchor="middle">bearer-token auth</text>
+              </g>
+              <g class="node" data-map="acme" tabindex="0" role="button" aria-label="Acme API">
+                <rect class="box" x="914" y="224" width="126" height="56" rx="10"/>
+                <text class="t" x="977" y="248" text-anchor="middle">Acme API</text>
+                <text class="s" x="977" y="266" text-anchor="middle">REST &#183; mocked</text>
+              </g>
+              <g class="node" data-map="beta" tabindex="0" role="button" aria-label="BetaCorp CRM">
+                <rect class="box" x="914" y="296" width="126" height="56" rx="10"/>
+                <text class="t" x="977" y="320" text-anchor="middle">BetaCorp CRM</text>
+                <text class="s" x="977" y="338" text-anchor="middle">Postgres schema</text>
+              </g>
+              <g class="node" data-map="pg" tabindex="0" role="button" aria-label="Postgres with pgvector">
+                <rect class="box" x="256" y="424" width="400" height="72" rx="12"/>
+                <text class="t" x="456" y="453" text-anchor="middle">Postgres + pgvector</text>
+                <text class="s" x="456" y="473" text-anchor="middle">Row-Level Security &#183; HNSW index</text>
+              </g>
+              <g class="node" data-map="redis" tabindex="0" role="button" aria-label="Redis">
+                <rect class="box" x="16" y="304" width="140" height="56" rx="10"/>
+                <text class="t" x="86" y="327" text-anchor="middle">Redis</text>
+                <text class="s" x="86" y="345" text-anchor="middle">queue &#183; limits</text>
+              </g>
+              <g class="node" data-map="worker" tabindex="0" role="button" aria-label="Worker">
+                <rect class="box" x="16" y="424" width="140" height="72" rx="10"/>
+                <text class="t" x="86" y="453" text-anchor="middle">Worker</text>
+                <text class="s" x="86" y="473" text-anchor="middle">extract &#183; embed</text>
+              </g>
+            </svg>
+          </div>
+          <figcaption id="map-cap">Arrows point in the direction of the call. The dashed boundary marks systems TenantPilot does not own; every hop into them goes through the MCP server using that tenant's stored, encrypted credential. Every service also exports traces and metrics (see Tracing).</figcaption>
+        </figure>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Component</th><th>What it does</th><th>Where</th></tr></thead>
+            <tbody>
+              <tr data-map="web" tabindex="0"><td class="comp">Web UI</td><td>Onboarding, agent console, approvals and the trace viewer. Proxies <code>/api/*</code> to FastAPI, reading the target at request time so one image fits every environment.</td><td class="where">apps/web/</td></tr>
+              <tr data-map="api" tabindex="0"><td class="comp">Control-plane API</td><td>JWT auth, a permission matrix per role, tenant resolution, per-tenant rate limiting, and the tenant, connector, tool and document APIs.</td><td class="where">apps/api/</td></tr>
+              <tr data-map="runtime" tabindex="0"><td class="comp">Agent runtime</td><td>The tool-use loop: builds context, asks the model, enforces tool policy, pauses for approvals and records every step. Runs inside the API process.</td><td class="where">services/agent/runtime.py</td></tr>
+              <tr data-map="llm" tabindex="0"><td class="comp">LLM</td><td>Claude Opus 5 through the Anthropic SDK, with request parameters shaped per model; or the deterministic offline planner that speaks the same protocol.</td><td class="where">services/agent/llm/</td></tr>
+              <tr data-map="mcp" tabindex="0"><td class="comp">MCP server</td><td>Four customer-operations tools discovered at runtime. Verifies a bearer token and re-checks the tenant and allowed tools on every call.</td><td class="where">services/mcp_server/</td></tr>
+              <tr data-map="acme" tabindex="0"><td class="comp">Acme API</td><td>A customer's REST system (mocked, with failure injection). Its JSON is mapped into canonical Customer, Job and Ticket objects.</td><td class="where">packages/connectors/rest.py</td></tr>
+              <tr data-map="beta" tabindex="0"><td class="comp">BetaCorp CRM</td><td>A customer's Postgres database. Named, parameterized, read-only queries only; the model never writes SQL.</td><td class="where">packages/connectors/postgres.py</td></tr>
+              <tr data-map="pg" tabindex="0"><td class="comp">Postgres + pgvector</td><td>Tenants, configs, runs, traces, the audit log and embedded document chunks. Every tenant table sits behind Row-Level Security.</td><td class="where">migrations/versions/</td></tr>
+              <tr data-map="redis" tabindex="0"><td class="comp">Redis</td><td>The RQ job queue for ingestion, and the rate-limit counters shared by every API replica.</td><td class="where">packages/core/queue.py</td></tr>
+              <tr data-map="worker" tabindex="0"><td class="comp">Worker</td><td>Extracts, chunks and embeds uploads in the background. Jobs are idempotent, so retries are safe.</td><td class="where">services/worker/</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============================================================ request -->
+      <section id="request">
+        <p class="path">services/agent/runtime.py</p>
+        <h2>One question, end to end</h2>
+        <p class="lead">&ldquo;Customer C-104 says their installation failed. What happened and what should we do?&rdquo; Sixteen hops later, the operator gets an answer where every claim cites its source. Point at a phase below to light up its hops.</p>
+
+        <figure class="fig">
+          <div class="fig-scroll">
+            <svg class="dg seq" viewBox="0 0 880 596" style="--min: 760px" role="group" aria-labelledby="seq-cap">
+              <defs>
+                <marker id="sA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,1 L9,5 L0,9 z"/></marker>
+                <marker id="sAacc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="mk acc" d="M0,1 L9,5 L0,9 z"/></marker>
+              </defs>
+              <rect class="box soft" x="14" y="14" width="112" height="34" rx="8"/>
+              <text class="tm" x="70" y="36" text-anchor="middle">Browser</text>
+              <rect class="box soft" x="154" y="14" width="112" height="34" rx="8"/>
+              <text class="tm" x="210" y="36" text-anchor="middle">API</text>
+              <rect class="box soft" x="294" y="14" width="112" height="34" rx="8"/>
+              <text class="tm" x="350" y="36" text-anchor="middle">LLM</text>
+              <rect class="box soft" x="434" y="14" width="112" height="34" rx="8"/>
+              <text class="tm" x="490" y="36" text-anchor="middle">Postgres</text>
+              <rect class="box soft" x="574" y="14" width="112" height="34" rx="8"/>
+              <text class="tm" x="630" y="36" text-anchor="middle">MCP server</text>
+              <rect class="box soft" x="734" y="14" width="112" height="34" rx="8"/>
+              <text class="tm" x="790" y="36" text-anchor="middle">Customer API</text>
+              <line class="life" x1="70" y1="48" x2="70" y2="584"/>
+              <line class="life" x1="210" y1="48" x2="210" y2="584"/>
+              <line class="life" x1="350" y1="48" x2="350" y2="584"/>
+              <line class="life" x1="490" y1="48" x2="490" y2="584"/>
+              <line class="life" x1="630" y1="48" x2="630" y2="584"/>
+              <line class="life" x1="790" y1="48" x2="790" y2="584"/>
+
+              <rect class="frame" x="150" y="284" width="700" height="248" rx="6"/>
+              <rect class="frame-tab" x="150" y="284" width="46" height="18" rx="6"/>
+              <text class="s" x="173" y="297" text-anchor="middle">loop</text>
+              <text class="s" x="842" y="298" text-anchor="end">until the final answer</text>
+
+              <g class="msg" data-n="1">
+                <circle class="num" cx="22" cy="84" r="9"/><text class="numt" x="22" y="87.5" text-anchor="middle">1</text>
+                <line class="e" x1="70" y1="84" x2="208" y2="84" marker-end="url(#sA)"/>
+                <text class="l" x="140" y="77" text-anchor="middle">POST /api/agent/run</text>
+              </g>
+              <g class="msg" data-n="2">
+                <circle class="num" cx="22" cy="114" r="9"/><text class="numt" x="22" y="117.5" text-anchor="middle">2</text>
+                <path class="e" d="M210,108 H246 V120 H213" marker-end="url(#sA)"/>
+                <text class="l" x="254" y="118">authorize &#183; rate limit</text>
+              </g>
+              <g class="msg" data-n="3">
+                <circle class="num" cx="22" cy="146" r="9"/><text class="numt" x="22" y="149.5" text-anchor="middle">3</text>
+                <line class="e" x1="210" y1="146" x2="488" y2="146" marker-end="url(#sA)"/>
+                <text class="l" x="350" y="139" text-anchor="middle">tenant_session(acme)</text>
+              </g>
+              <g class="msg" data-n="4">
+                <circle class="num" cx="22" cy="176" r="9"/><text class="numt" x="22" y="179.5" text-anchor="middle">4</text>
+                <line class="e" x1="210" y1="176" x2="628" y2="176" marker-end="url(#sA)"/>
+                <text class="l" x="420" y="169" text-anchor="middle">tools/list</text>
+              </g>
+              <g class="msg" data-n="5">
+                <circle class="num" cx="22" cy="204" r="9"/><text class="numt" x="22" y="207.5" text-anchor="middle">5</text>
+                <line class="e dash" x1="630" y1="204" x2="212" y2="204" marker-end="url(#sA)"/>
+                <text class="l" x="420" y="197" text-anchor="middle">4 tools + JSON Schema</text>
+              </g>
+              <g class="msg" data-n="6">
+                <circle class="num" cx="22" cy="236" r="9"/><text class="numt" x="22" y="239.5" text-anchor="middle">6</text>
+                <line class="e" x1="210" y1="236" x2="488" y2="236" marker-end="url(#sA)"/>
+                <text class="l" x="350" y="229" text-anchor="middle">pgvector search</text>
+              </g>
+              <g class="msg" data-n="7">
+                <circle class="num" cx="22" cy="266" r="9"/><text class="numt" x="22" y="269.5" text-anchor="middle">7</text>
+                <path class="e" d="M210,260 H246 V272 H213" marker-end="url(#sA)"/>
+                <text class="l" x="254" y="270">rank + fit budget</text>
+              </g>
+              <g class="msg" data-n="8">
+                <circle class="num" cx="22" cy="318" r="9"/><text class="numt" x="22" y="321.5" text-anchor="middle">8</text>
+                <line class="e" x1="210" y1="318" x2="348" y2="318" marker-end="url(#sA)"/>
+                <text class="l" x="280" y="311" text-anchor="middle">prompt + tools</text>
+              </g>
+              <g class="msg" data-n="9">
+                <circle class="num" cx="22" cy="346" r="9"/><text class="numt" x="22" y="349.5" text-anchor="middle">9</text>
+                <line class="e dash" x1="350" y1="346" x2="212" y2="346" marker-end="url(#sA)"/>
+                <text class="l" x="280" y="339" text-anchor="middle" style="font-size: 10.5px">tool_use get_customer</text>
+              </g>
+              <g class="msg" data-n="10">
+                <circle class="num" cx="22" cy="376" r="9"/><text class="numt" x="22" y="379.5" text-anchor="middle">10</text>
+                <path class="e" d="M210,370 H246 V382 H213" marker-end="url(#sA)"/>
+                <text class="l" x="254" y="380">policy + schema check</text>
+              </g>
+              <g class="msg" data-n="11">
+                <circle class="num" cx="22" cy="408" r="9"/><text class="numt" x="22" y="411.5" text-anchor="middle">11</text>
+                <line class="e" x1="210" y1="408" x2="628" y2="408" marker-end="url(#sA)"/>
+                <text class="l" x="420" y="401" text-anchor="middle">tools/call &#183; service token</text>
+              </g>
+              <g class="msg" data-n="12">
+                <circle class="num" cx="22" cy="438" r="9"/><text class="numt" x="22" y="441.5" text-anchor="middle">12</text>
+                <line class="e" x1="630" y1="438" x2="492" y2="438" marker-end="url(#sA)"/>
+                <text class="l" x="560" y="431" text-anchor="middle">connector + secret</text>
+              </g>
+              <g class="msg" data-n="13">
+                <circle class="num" cx="22" cy="468" r="9"/><text class="numt" x="22" y="471.5" text-anchor="middle">13</text>
+                <line class="e" x1="630" y1="468" x2="788" y2="468" marker-end="url(#sA)"/>
+                <text class="l" x="710" y="461" text-anchor="middle">GET /customers/C-104</text>
+              </g>
+              <g class="msg" data-n="14">
+                <circle class="num" cx="22" cy="496" r="9"/><text class="numt" x="22" y="499.5" text-anchor="middle">14</text>
+                <line class="e dash" x1="790" y1="496" x2="632" y2="496" marker-end="url(#sA)"/>
+                <text class="l" x="710" y="489" text-anchor="middle">JSON &#8594; Customer</text>
+              </g>
+              <g class="msg" data-n="15">
+                <circle class="num" cx="22" cy="522" r="9"/><text class="numt" x="22" y="525.5" text-anchor="middle">15</text>
+                <line class="e dash" x1="630" y1="522" x2="212" y2="522" marker-end="url(#sA)"/>
+                <text class="l" x="420" y="515" text-anchor="middle">result labelled T1</text>
+              </g>
+              <g class="msg" data-n="16">
+                <circle class="num" cx="22" cy="562" r="9"/><text class="numt" x="22" y="565.5" text-anchor="middle">16</text>
+                <line class="e dash" x1="210" y1="562" x2="72" y2="562" marker-end="url(#sA)"/>
+                <text class="l" x="140" y="555" text-anchor="middle">answer + citations</text>
+              </g>
+            </svg>
+          </div>
+          <figcaption id="seq-cap">Solid arrows are requests, dashed arrows are responses. Hops 8&#8211;15 repeat until the model stops asking for tools; for C-104 that took three model calls: <code>get_customer</code> (T1), <code>list_open_jobs</code> (T2), then the answer.</figcaption>
+        </figure>
+
+        <div class="phases">
+          <article class="phase" tabindex="0" data-steps="1,2,3">
+            <span class="hops">hops 1&#8211;3</span>
+            <h3>Authenticate and scope</h3>
+            <p>The JWT says who you are; membership says which tenants you may touch, and anyone else gets a 403. A Redis counter caps each tenant at 30 runs a minute across every API replica. Then every query runs in a transaction scoped to Acme:</p>
+            <pre><code>SELECT set_config('app.current_tenant', :tid, true)
+-- true = transaction-local: gone at COMMIT, so a
+-- pooled connection never carries it to the next request</code></pre>
+          </article>
+          <article class="phase" tabindex="0" data-steps="4,5">
+            <span class="hops">hops 4&#8211;5</span>
+            <h3>Discover tools</h3>
+            <p>The runtime asks the MCP server what exists instead of hard-coding tools, then keeps only what Acme enabled. <code>create_ticket</code> advertises <code>readOnlyHint: false</code>, so it arrives pre-marked as approval-gated. New tools show up here automatically but start disabled for every tenant.</p>
+          </article>
+          <article class="phase" tabindex="0" data-steps="6,7">
+            <span class="hops">hops 6&#8211;7</span>
+            <h3>Retrieve and budget context</h3>
+            <p>Up to 12 candidate chunks come back from the tenant's HNSW index. The ContextBuilder drops weak and duplicate ones, ranks the rest and fills a 3,362-token knowledge budget. Each survivor becomes <code>K1</code>, <code>K2</code>&#8230; with a logged reason.</p>
+          </article>
+          <article class="phase" tabindex="0" data-steps="8,9">
+            <span class="hops">hops 8&#8211;9</span>
+            <h3>Let the model choose</h3>
+            <p>The model sees only enabled tools and answers with a structured call, never free text the runtime has to guess at:</p>
+            <pre><code>{"type": "tool_use", "name": "get_customer",
+ "input": {"customer_id": "C-104"}}</code></pre>
+          </article>
+          <article class="phase" tabindex="0" data-steps="10">
+            <span class="hops">hop 10</span>
+            <h3>Govern the call</h3>
+            <p>Code decides, not the prompt. Permissions are re-read every turn and arguments are checked against the tool's JSON Schema, so <code>"priority": "URGENTTT"</code> is rejected before any network call. Write tools stop here and wait for a human.</p>
+          </article>
+          <article class="phase" tabindex="0" data-steps="11,12,13,14,15">
+            <span class="hops">hops 11&#8211;15</span>
+            <h3>Execute through MCP</h3>
+            <p>A 5-minute service token pins the tenant and the allowed tools, and the MCP server rejects anything else. The connector decrypts Acme's key, calls its API (retrying 5xx, at most 3 attempts), maps <code>customer_ref &#8594; customer_id</code> and returns source <code>T1</code>.</p>
+            <pre><code>{"aud": "tenantpilot-mcp", "scope": "mcp:tools",
+ "tenant_id": "&lt;acme uuid&gt;", "run_id": "&#8230;",
+ "allowed_tools": ["get_customer", "list_open_jobs", &#8230;],
+ "exp": "issued + 5 min"}</code></pre>
+          </article>
+          <article class="phase wide" tabindex="0" data-steps="16">
+            <span class="hops">hop 16</span>
+            <h3>Answer with evidence</h3>
+            <p>After <code>list_open_jobs</code> (T2) and the runbook excerpt (K5), the model answers: job J-774 failed with E-ACT-401, a missing activation token, followed by the runbook's five resolution steps. Findings must cite ids that exist in the run, and unknown ids are flagged. The response carries <code>request_id</code> and <code>trace_id</code>, linking the UI's trace screen to Jaeger.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================================================ isolation -->
+      <section id="isolation">
+        <p class="path">packages/core/db.py &#183; migrations/versions/0001_initial.py</p>
+        <h2>Four walls between tenants</h2>
+        <p class="lead">Isolation can't depend on every developer remembering a <code>WHERE</code> clause. Each wall below stops a leak on its own; the lower ones exist for the day the upper ones fail.</p>
+
+        <figure class="fig">
+          <div class="fig-scroll">
+            <svg class="dg" viewBox="0 0 920 316" style="--min: 720px" role="img" aria-labelledby="iso-cap">
+              <defs>
+                <marker id="iOk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="mk ok" d="M0,1 L9,5 L0,9 z"/></marker>
+              </defs>
+              <rect class="wall" x="250" y="56" width="12" height="222" rx="3"/>
+              <rect class="wall gap" x="400" y="56" width="12" height="222" rx="3"/>
+              <rect class="wall" x="550" y="56" width="12" height="222" rx="3"/>
+              <rect class="wall" x="700" y="56" width="12" height="222" rx="3"/>
+              <text class="wt" x="256" y="40" text-anchor="middle">1 &#183; API membership</text>
+              <text class="wt" x="406" y="40" text-anchor="middle">2 &#183; explicit filter</text>
+              <text class="wt" x="556" y="40" text-anchor="middle">3 &#183; RLS policy</text>
+              <text class="wt" x="706" y="40" text-anchor="middle">4 &#183; runtime DB role</text>
+              <text class="l bad" x="406" y="302" text-anchor="middle">skipped by the bug</text>
+              <text class="l" x="706" y="302" text-anchor="middle">can't switch RLS off</text>
+
+              <rect class="box" x="16" y="70" width="150" height="56" rx="10"/>
+              <text class="t" x="91" y="94" text-anchor="middle">Wrong tenant</text>
+              <text class="s" x="91" y="112" text-anchor="middle">X-Tenant-ID: betacorp</text>
+              <rect class="box" x="16" y="190" width="150" height="56" rx="10"/>
+              <text class="t" x="91" y="214" text-anchor="middle">Buggy query</text>
+              <text class="s" x="91" y="232" text-anchor="middle">no WHERE tenant_id</text>
+
+              <rect class="box acc" x="780" y="80" width="124" height="60" rx="10"/>
+              <text class="t" x="842" y="106" text-anchor="middle">Acme rows</text>
+              <text class="s" x="842" y="124" text-anchor="middle">returned</text>
+              <rect class="box" x="780" y="188" width="124" height="60" rx="10"/>
+              <text class="t" x="842" y="214" text-anchor="middle">BetaCorp rows</text>
+              <text class="s" x="842" y="232" text-anchor="middle">never visible</text>
+
+              <line class="e bad" x1="166" y1="98" x2="234" y2="98"/>
+              <path class="x" d="M236,92 l10,12 M246,92 l-10,12"/>
+              <text class="l bad" x="198" y="89" text-anchor="middle">403</text>
+
+              <path class="e" d="M166,218 H500"/>
+              <text class="l ok" x="330" y="210" text-anchor="middle">member of acme</text>
+              <path class="e ok" d="M500,218 V110 H776" marker-end="url(#iOk)"/>
+              <text class="l ok" x="631" y="102" text-anchor="middle">tenant = acme</text>
+              <path class="e bad" d="M500,218 H534"/>
+              <path class="x" d="M536,212 l10,12 M546,212 l-10,12"/>
+              <text class="l bad" x="572" y="244">0 BetaCorp rows</text>
+            </svg>
+          </div>
+          <figcaption id="iso-cap">Two ways data could leak, and where each one stops. The wrong-tenant request dies at the API with a 403. The buggy query forgets its filter (wall 2), yet Row-Level Security still returns only Acme's rows, and the runtime role has no power to switch RLS off.</figcaption>
+        </figure>
+
+        <div class="split">
+          <div>
+            <pre><code>ALTER TABLE document_chunks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE document_chunks FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation ON document_chunks
+  USING      (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid)
+  WITH CHECK (tenant_id = NULLIF(current_setting('app.current_tenant', true), '')::uuid);
+
+-- the app connects as:
+CREATE ROLE tenantpilot_app LOGIN NOSUPERUSER NOBYPASSRLS;</code></pre>
+          </div>
+          <div class="notes">
+            <p class="note"><b>Why <code>NULLIF</code>.</b> Once a pooled connection has used the setting, <code>current_setting()</code> returns <code>''</code> instead of NULL, and <code>''::uuid</code> throws. <code>NULLIF</code> turns it into NULL, so a query with no tenant fails closed: zero rows.</p>
+            <p class="note"><b>Why a second role.</b> Superusers skip RLS and table owners can disable it. The app is neither: it can read and write rows but can't alter tables, and it can append to the audit log but never edit or delete it.</p>
+            <p class="note"><b>Tested, not assumed.</b> 403 for non-members, 404 for another tenant's run id, zero rows with no tenant set, and an insert for another tenant rejected by <code>WITH CHECK</code>.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ tools -->
+      <section id="tools">
+        <p class="path">services/agent/policy.py &#183; services/mcp_server/auth.py &#183; services/agent/runtime.py</p>
+        <h2>Every tool call passes four gates</h2>
+        <p class="lead">The model proposes and code decides. A tool call has to clear four independent checks, and anything that changes a customer's system waits for a person.</p>
+
+        <div class="gates">
+          <div class="gate">
+            <span class="g-n">gate 1</span>
+            <h3>Offered to the model?</h3>
+            <p>Only tools the tenant enabled are listed. BetaCorp's agent never even sees <code>create_ticket</code>.</p>
+          </div>
+          <div class="gate">
+            <span class="g-n">gate 2</span>
+            <h3>Allowed this turn?</h3>
+            <p>Permissions are re-read every turn, so revoking a tool stops runs already in flight. Arguments are validated against the JSON Schema.</p>
+          </div>
+          <div class="gate">
+            <span class="g-n">gate 3</span>
+            <h3>Accepted by MCP?</h3>
+            <p>The service token lists the allowed tools and the server checks it again. A user's JWT is rejected outright: different secret, different audience.</p>
+          </div>
+          <div class="gate stop">
+            <span class="g-n">gate 4</span>
+            <h3>Changes a customer system?</h3>
+            <p><code>readOnlyHint: false</code> means stop: the run saves its transcript and waits in <code>awaiting_approval</code>.</p>
+          </div>
+        </div>
+
+        <div class="fig-row">
+          <figure class="fig">
+            <div class="fig-scroll">
+              <svg class="dg" viewBox="0 0 760 248" style="--min: 560px; max-width: 880px" role="img" aria-labelledby="st-cap">
+                <defs>
+                  <marker id="tA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,1 L9,5 L0,9 z"/></marker>
+                </defs>
+                <path class="e" d="M95,100 V52 H588" marker-end="url(#tA)"/>
+                <text class="l" x="340" y="44" text-anchor="middle">valid final answer</text>
+                <line class="e" x1="160" y1="124" x2="278" y2="124" marker-end="url(#tA)"/>
+                <text class="l" x="219" y="116" text-anchor="middle">write tool</text>
+                <path class="e" d="M375,148 V174 H112 V150" marker-end="url(#tA)"/>
+                <text class="l" x="243" y="192" text-anchor="middle">approve or reject</text>
+                <path class="e" d="M78,148 V210 H588" marker-end="url(#tA)"/>
+                <text class="l" x="340" y="230" text-anchor="middle">LLM error &#183; refusal &#183; 8-turn cap</text>
+                <rect class="box" x="30" y="100" width="130" height="48" rx="24"/>
+                <text class="tm" x="95" y="129" text-anchor="middle">running</text>
+                <rect class="box warn" x="280" y="100" width="190" height="48" rx="24"/>
+                <text class="tm" x="375" y="121" text-anchor="middle">awaiting_approval</text>
+                <text class="s" x="375" y="138" text-anchor="middle">transcript saved</text>
+                <rect class="box ok" x="590" y="28" width="140" height="48" rx="24"/>
+                <text class="tm" x="660" y="57" text-anchor="middle">completed</text>
+                <rect class="box bad" x="590" y="186" width="140" height="48" rx="24"/>
+                <text class="tm" x="660" y="215" text-anchor="middle">failed</text>
+              </svg>
+            </div>
+            <figcaption id="st-cap">A run can stop at a write and resume in a later request, even on another pod, because its whole transcript lives in <code>agent_runs.state</code>. Read-only tool calls loop inside <code>running</code>. A rejection resumes the run too, with the rejection as the tool result.</figcaption>
+          </figure>
+          <figure class="fig side">
+            <div class="fig-scroll">
+              <svg class="dg" viewBox="0 0 520 206" style="--min: 420px" role="img" aria-labelledby="race-cap">
+                <defs>
+                  <marker id="rA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,1 L9,5 L0,9 z"/></marker>
+                  <marker id="rOk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="mk ok" d="M0,1 L9,5 L0,9 z"/></marker>
+                  <marker id="rBad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="mk bad" d="M0,1 L9,5 L0,9 z"/></marker>
+                </defs>
+                <line class="e" x1="106" y1="30" x2="208" y2="70" marker-end="url(#rA)"/>
+                <line class="e" x1="106" y1="74" x2="208" y2="94" marker-end="url(#rA)"/>
+                <line class="e" x1="106" y1="118" x2="208" y2="118" marker-end="url(#rA)"/>
+                <line class="e" x1="106" y1="162" x2="208" y2="142" marker-end="url(#rA)"/>
+                <line class="e ok" x1="360" y1="80" x2="408" y2="64" marker-end="url(#rOk)"/>
+                <line class="e bad" x1="360" y1="128" x2="408" y2="148" marker-end="url(#rBad)"/>
+                <rect class="box" x="10" y="14" width="96" height="32" rx="8"/>
+                <text class="tm" x="58" y="35" text-anchor="middle">approve</text>
+                <rect class="box" x="10" y="58" width="96" height="32" rx="8"/>
+                <text class="tm" x="58" y="79" text-anchor="middle">approve</text>
+                <rect class="box" x="10" y="102" width="96" height="32" rx="8"/>
+                <text class="tm" x="58" y="123" text-anchor="middle">approve</text>
+                <rect class="box" x="10" y="146" width="96" height="32" rx="8"/>
+                <text class="tm" x="58" y="167" text-anchor="middle">approve</text>
+                <rect class="box soft" x="210" y="48" width="150" height="112" rx="10"/>
+                <text class="tm" x="285" y="84" text-anchor="middle">SELECT &#8230;</text>
+                <text class="tm" x="285" y="102" text-anchor="middle">FOR UPDATE</text>
+                <text class="s" x="285" y="124" text-anchor="middle">check status</text>
+                <text class="s" x="285" y="141" text-anchor="middle">flip &#8594; running</text>
+                <rect class="box ok" x="410" y="40" width="100" height="44" rx="10"/>
+                <text class="tm" x="460" y="60" text-anchor="middle">1 &#215; 200</text>
+                <text class="s" x="460" y="76" text-anchor="middle">executes</text>
+                <rect class="box bad" x="410" y="128" width="100" height="44" rx="10"/>
+                <text class="tm" x="460" y="148" text-anchor="middle">3 &#215; 409</text>
+                <text class="s" x="460" y="164" text-anchor="middle">rejected</text>
+              </svg>
+            </div>
+            <figcaption id="race-cap">The approval endpoint locks the run row and flips it out of <code>awaiting_approval</code> in the same transaction. The integration test fires four approvals at once: one 200, three 409s, exactly one ticket.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ============================================================ context -->
+      <section id="context">
+        <p class="path">packages/context/builder.py &#183; packages/knowledge/</p>
+        <h2>Context is a budget, not a dump</h2>
+        <p class="lead">Acme's config caps the prompt at 6,000 tokens. The ContextBuilder spends that budget on the most useful evidence and writes down why each chunk made the cut, or didn't.</p>
+
+        <figure class="fig">
+          <div class="fig-scroll">
+            <svg class="dg" viewBox="0 0 900 148" style="--min: 640px" role="img" aria-labelledby="bud-cap">
+              <text class="v" x="30" y="28"><tspan class="vb">system 367</tspan> &#183; request 21</text>
+              <text class="v" x="870" y="28" text-anchor="end">slack 150</text>
+              <rect class="seg sys" x="30" y="38" width="51.38" height="34"/>
+              <rect class="seg req" x="81.38" y="38" width="2.94" height="34"/>
+              <rect class="seg kn" x="84.32" y="38" width="176.82" height="34"/>
+              <rect class="seg free" x="261.14" y="38" width="293.86" height="34"/>
+              <rect class="seg tool" x="555" y="38" width="294" height="34"/>
+              <rect class="seg slack" x="849" y="38" width="21" height="34"/>
+              <rect class="bar-edge" x="30" y="38" width="840" height="34" rx="2"/>
+              <text class="v" x="172.7" y="94" text-anchor="middle"><tspan class="vb">used 1,263</tspan></text>
+              <text class="v" x="408" y="94" text-anchor="middle">left 2,099</text>
+              <text class="v" x="702" y="94" text-anchor="middle">tool-result reserve 2,100</text>
+              <path class="tree" d="M84.32,106 V114 H555 V106"/>
+              <text class="v" x="319.7" y="134" text-anchor="middle"><tspan class="vb">knowledge budget 3,362</tspan> of 6,000</text>
+            </svg>
+          </div>
+          <figcaption id="bud-cap">The C-104 run, drawn to scale in tokens. Knowledge gets what's left after the system prompt, the question, a reserve for tool results and a little slack; this run used 1,263 of its 3,362.</figcaption>
+        </figure>
+
+        <div class="split">
+          <ol class="steps" aria-label="ContextBuilder pipeline">
+            <li>Retrieve up to 12 candidates from the tenant's HNSW index (top-k &#215; 2), filtered by tenant and by RLS.</li>
+            <li>Drop anything under the relevance floor (vector score 0.02, tuned for this embedder).</li>
+            <li>Remove exact duplicates and near-duplicates (&#8805; 0.85 term overlap), keeping the stronger copy.</li>
+            <li>Rank by 0.6 &#215; vector + 0.3 &#215; lexical overlap + 0.1 &#215; entity match (C-104, E-ACT-401).</li>
+            <li>Fill the budget highest-value first, and label survivors K1, K2 &#8230; for citation.</li>
+          </ol>
+          <div class="notes">
+            <p class="note"><b>Every decision is logged.</b> In the C-104 run, K2 was kept as &ldquo;rank 2: vector=0.10 lexical=0.33&rdquo;, and three chunks were dropped as &ldquo;below relevance floor&rdquo; (scores 0.011, 0.011 and 0.000). The other reasons are &ldquo;near-duplicate of &#8230;&rdquo; and &ldquo;over token budget&rdquo;. The trace screen shows this table for every run.</p>
+            <p class="note"><b>Tool results get the same treatment:</b> fitted to the reserve, redacted, and labelled T1, T2 &#8230; An answer that cites an id that never existed in the run is flagged as unsupported.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ mapping -->
+      <section id="mapping">
+        <p class="path">packages/connectors/ &#183; packages/schemas/canonical.py</p>
+        <h2>Two customers, one data model</h2>
+        <p class="lead">Acme exposes a REST API; BetaCorp granted read-only access to a Postgres CRM. Both answer the same <code>get_customer</code> tool, because each connector carries a declarative field map instead of custom code.</p>
+
+        <figure class="fig">
+          <div class="fig-scroll">
+            <svg class="dg" viewBox="0 0 900 252" style="--min: 700px" role="img" aria-labelledby="mp-cap">
+              <defs>
+                <marker id="mpA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,1 L9,5 L0,9 z"/></marker>
+              </defs>
+              <text class="s" x="295" y="22" text-anchor="middle">field_map</text>
+              <text class="s" x="605" y="22" text-anchor="middle">field_map</text>
+              <rect class="box" x="16" y="30" width="250" height="206" rx="12"/>
+              <text class="t" x="141" y="56" text-anchor="middle">Acme REST response</text>
+              <text class="s" x="141" y="74" text-anchor="middle">GET /customers/{id}</text>
+              <text class="tm" x="36" y="106">customer_ref</text>
+              <text class="tm" x="36" y="132">full_name</text>
+              <text class="tm" x="36" y="158">account_status</text>
+              <text class="tm" x="36" y="184">site.region</text>
+              <text class="tm" x="36" y="210">contact.name</text>
+
+              <rect class="box acc" x="325" y="30" width="250" height="206" rx="12"/>
+              <text class="t" x="450" y="56" text-anchor="middle">Customer</text>
+              <text class="s" x="450" y="74" text-anchor="middle">canonical model</text>
+              <text class="tm" x="345" y="106">customer_id</text>
+              <text class="tm" x="345" y="132">name</text>
+              <text class="tm" x="345" y="158">status</text>
+              <text class="tm" x="345" y="184">region</text>
+              <text class="tm" x="345" y="210">primary_contact</text>
+
+              <rect class="box" x="634" y="30" width="250" height="206" rx="12"/>
+              <text class="t" x="759" y="56" text-anchor="middle">BetaCorp CRM row</text>
+              <text class="s" x="759" y="74" text-anchor="middle">named query &#183; $1</text>
+              <text class="tm" x="654" y="106">account_ref</text>
+              <text class="tm" x="654" y="132">org_name</text>
+              <text class="tm" x="654" y="158">lifecycle_state</text>
+              <text class="tm" x="654" y="184">hq_region</text>
+              <text class="tm" x="654" y="210">account_manager</text>
+
+              <line class="e" x1="266" y1="102" x2="323" y2="102" marker-end="url(#mpA)"/>
+              <line class="e" x1="266" y1="128" x2="323" y2="128" marker-end="url(#mpA)"/>
+              <line class="e" x1="266" y1="154" x2="323" y2="154" marker-end="url(#mpA)"/>
+              <line class="e" x1="266" y1="180" x2="323" y2="180" marker-end="url(#mpA)"/>
+              <line class="e" x1="266" y1="206" x2="323" y2="206" marker-end="url(#mpA)"/>
+              <line class="e" x1="634" y1="102" x2="577" y2="102" marker-end="url(#mpA)"/>
+              <line class="e" x1="634" y1="128" x2="577" y2="128" marker-end="url(#mpA)"/>
+              <line class="e" x1="634" y1="154" x2="577" y2="154" marker-end="url(#mpA)"/>
+              <line class="e" x1="634" y1="180" x2="577" y2="180" marker-end="url(#mpA)"/>
+              <line class="e" x1="634" y1="206" x2="577" y2="206" marker-end="url(#mpA)"/>
+            </svg>
+          </div>
+          <figcaption id="mp-cap">Same tool, two customers, two backends. Each connector's field map turns the customer's shape into one canonical model, so the agent, the prompts and the evals never change when a new customer arrives.</figcaption>
+        </figure>
+
+        <div class="cards3">
+          <div class="card">
+            <h3>REST connector</h3>
+            <p>Retries 5xx, 429 and timeouts with backoff and stops at 3 attempts. 404 means not found and 401/403 means bad credentials; other 4xx are never retried. Path values are URL-encoded so input can't change the endpoint.</p>
+          </div>
+          <div class="card">
+            <h3>Postgres connector</h3>
+            <p>Named, parameterized, single-statement <code>SELECT</code>s, run in read-only transactions with a statement timeout. The model supplies values; it never supplies SQL.</p>
+          </div>
+          <div class="card">
+            <h3>Credentials</h3>
+            <p>Stored Fernet-encrypted in the tenant's RLS-protected secrets table and referenced as <code>db://&lt;id&gt;</code>. The API hands back the reference, never the key.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ trace -->
+      <section id="trace">
+        <p class="path">packages/core/telemetry.py &#183; services/agent/recorder.py</p>
+        <h2>One trace across the MCP hop</h2>
+        <p class="lead">Each agent run is a single OpenTelemetry trace. Ordinary HTTP calls carry a <code>traceparent</code> header; the MCP SDK carries the same context inside the JSON-RPC <code>_meta</code> field, so the MCP server's spans join the trace with no extra code.</p>
+
+        <figure class="fig">
+          <div class="fig-scroll">
+            <svg class="dg" viewBox="0 0 900 352" style="--min: 700px" role="img" aria-labelledby="tr-cap">
+              <defs>
+                <marker id="trAcc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="mk acc" d="M0,1 L9,5 L0,9 z"/></marker>
+              </defs>
+              <text class="s" x="884" y="26" text-anchor="end">tenantpilot-api</text>
+              <text class="s" x="884" y="276" text-anchor="end">tenantpilot-mcp</text>
+              <line class="bnd" x1="10" y1="250" x2="890" y2="250"/>
+
+              <path class="tree" d="M24,40 V59 H36"/>
+              <path class="tree" d="M44,70 V179 M44,89 H56 M44,119 H56 M44,149 H56 M44,179 H56"/>
+              <path class="tree" d="M64,190 V209 H76"/>
+              <path class="tree" d="M104,292 V311 H116"/>
+              <path class="e acc" d="M84,220 V274" marker-end="url(#trAcc)"/>
+              <text class="l acc" x="96" y="246">context rides in JSON-RPC _meta</text>
+
+              <rect class="span api" x="16" y="18" width="330" height="22" rx="4"/>
+              <text class="tm" x="26" y="33">POST /api/agent/run</text>
+              <rect class="span api" x="36" y="48" width="310" height="22" rx="4"/>
+              <text class="tm" x="46" y="63">agent.run</text>
+              <rect class="span api" x="56" y="78" width="290" height="22" rx="4"/>
+              <text class="tm" x="66" y="93">agent.retrieval</text>
+              <rect class="span api" x="56" y="108" width="290" height="22" rx="4"/>
+              <text class="tm" x="66" y="123">agent.context_build</text>
+              <rect class="span api" x="56" y="138" width="290" height="22" rx="4"/>
+              <text class="tm" x="66" y="153">agent.llm_call</text>
+              <rect class="span api" x="56" y="168" width="290" height="22" rx="4"/>
+              <text class="tm" x="66" y="183">mcp.call_tool</text>
+              <rect class="span api" x="76" y="198" width="270" height="22" rx="4"/>
+              <text class="tm" x="86" y="213">MCP send tools/call get_customer</text>
+
+              <rect class="span mcp" x="96" y="276" width="250" height="22" rx="4"/>
+              <text class="tm" x="106" y="291">tools/call get_customer</text>
+              <rect class="span mcp" x="116" y="306" width="230" height="22" rx="4"/>
+              <text class="tm" x="126" y="321">GET</text>
+              <text class="s" x="160" y="321">&#8230;/acme/v1/customers/C-104</text>
+
+              <path class="e acc" d="M346,317 H698" marker-end="url(#trAcc)"/>
+              <text class="l acc" x="522" y="309" text-anchor="middle">traceparent HTTP header</text>
+              <rect class="box" x="700" y="297" width="184" height="40" rx="8"/>
+              <text class="t" x="792" y="322" text-anchor="middle">Acme API</text>
+
+              <rect class="box soft" x="480" y="60" width="404" height="130" rx="12"/>
+              <text class="big" x="504" y="102">1 trace &#183; 103 spans</text>
+              <text class="s" x="504" y="128">api + mcp, joined by one trace_id</text>
+              <text class="s" x="504" y="148">stored on the run, opened in Jaeger</text>
+              <text class="s" x="504" y="168">same steps kept in run_steps for the UI</text>
+            </svg>
+          </div>
+          <figcaption id="tr-cap">Simplified from a real run in Jaeger, with SQL and other child spans left out. The same steps are also written to Postgres as <code>run_steps</code>, which is what TenantPilot's own trace screen reads, so tracing works even with no tracing backend.</figcaption>
+        </figure>
+
+        <div class="cards3">
+          <div class="card">
+            <h3>Logs</h3>
+            <p>JSON lines carrying request_id, tenant_id, run_id and trace_id. API keys, bearer tokens, JWTs and DSN passwords are scrubbed before a line is written.</p>
+          </div>
+          <div class="card">
+            <h3>Metrics</h3>
+            <p><code>agent_requests_total</code>, <code>agent_latency_seconds</code>, <code>tool_calls_total</code>, <code>tool_failures_total</code>, <code>retrieval_latency_seconds</code>: labelled by tenant and tool, never by run.</p>
+          </div>
+          <div class="card">
+            <h3>Dashboards</h3>
+            <p>Grafana shows success rate, p95 latency, requests per minute, tool failures, tokens, approval decisions and customer-system outcomes.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ delivery -->
+      <section id="delivery">
+        <p class="path">.github/workflows/ &#183; helm/tenantpilot/ &#183; infra/terraform/</p>
+        <h2>From commit to cluster</h2>
+        <p class="lead">Pull requests run every test against real Postgres and Redis. Merges ship the exact image that was tested: first to a throwaway Kubernetes cluster inside the CI runner, and only then onward.</p>
+
+        <figure class="fig">
+          <div class="fig-scroll">
+            <svg class="dg" viewBox="0 0 940 262" style="--min: 760px" role="img" aria-labelledby="pipe-cap">
+              <defs>
+                <marker id="pA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,1 L9,5 L0,9 z"/></marker>
+              </defs>
+              <text class="rowt" x="20" y="22">pull request &#183; ci.yml &#183; jobs run in parallel</text>
+              <rect class="box" x="20" y="34" width="140" height="52" rx="10"/>
+              <text class="t" x="90" y="56" text-anchor="middle">Lint</text>
+              <text class="s" x="90" y="74" text-anchor="middle">ruff lint + format</text>
+              <rect class="box" x="172" y="34" width="140" height="52" rx="10"/>
+              <text class="t" x="242" y="56" text-anchor="middle">Web build</text>
+              <text class="s" x="242" y="74" text-anchor="middle">tsc &#183; lint &#183; build</text>
+              <rect class="box" x="324" y="34" width="140" height="52" rx="10"/>
+              <text class="t" x="394" y="56" text-anchor="middle">Unit tests</text>
+              <text class="s" x="394" y="74" text-anchor="middle">54 tests</text>
+              <rect class="box" x="476" y="34" width="140" height="52" rx="10"/>
+              <text class="t" x="546" y="56" text-anchor="middle">Integration</text>
+              <text class="s" x="546" y="74" text-anchor="middle">29 &#183; pg + redis</text>
+              <rect class="box" x="628" y="34" width="140" height="52" rx="10"/>
+              <text class="t" x="698" y="56" text-anchor="middle">Helm chart</text>
+              <text class="s" x="698" y="74" text-anchor="middle">lint + kubeconform</text>
+              <rect class="box" x="780" y="34" width="140" height="52" rx="10"/>
+              <text class="t" x="850" y="56" text-anchor="middle">Docker build</text>
+              <text class="s" x="850" y="74" text-anchor="middle">backend + web</text>
+
+              <path class="tree" d="M90,86 V100 M242,86 V100 M394,86 V100 M546,86 V100 M698,86 V100 M850,86 V100 M84,100 H850"/>
+              <line class="e" x1="84" y1="100" x2="84" y2="148" marker-end="url(#pA)"/>
+              <text class="l" x="94" y="128">all green on main</text>
+              <text class="rowt" x="920" y="138" text-anchor="end">main &#183; deploy.yml &#183; each step gates the next</text>
+
+              <rect class="box" x="20" y="150" width="128" height="52" rx="10"/>
+              <text class="t" x="84" y="172" text-anchor="middle">Push images</text>
+              <text class="s" x="84" y="190" text-anchor="middle">GHCR &#183; tag = SHA</text>
+              <line class="e" x1="148" y1="176" x2="170" y2="176" marker-end="url(#pA)"/>
+              <rect class="box" x="172" y="150" width="128" height="52" rx="10"/>
+              <text class="t" x="236" y="172" text-anchor="middle">kind cluster</text>
+              <text class="s" x="236" y="190" text-anchor="middle">in the CI runner</text>
+              <line class="e" x1="300" y1="176" x2="322" y2="176" marker-end="url(#pA)"/>
+              <rect class="box" x="324" y="150" width="128" height="52" rx="10"/>
+              <text class="t" x="388" y="172" text-anchor="middle">helm upgrade</text>
+              <text class="s" x="388" y="190" text-anchor="middle">rollback on fail</text>
+              <line class="e" x1="452" y1="176" x2="474" y2="176" marker-end="url(#pA)"/>
+              <rect class="box" x="476" y="150" width="128" height="52" rx="10"/>
+              <text class="t" x="540" y="172" text-anchor="middle">Rollout + test</text>
+              <text class="s" x="540" y="190" text-anchor="middle">helm test</text>
+              <line class="e" x1="604" y1="176" x2="626" y2="176" marker-end="url(#pA)"/>
+              <rect class="box" x="628" y="150" width="128" height="52" rx="10"/>
+              <text class="t" x="692" y="172" text-anchor="middle">Smoke + evals</text>
+              <text class="s" x="692" y="190" text-anchor="middle">90% eval gate</text>
+              <line class="e" x1="756" y1="176" x2="778" y2="176" marker-end="url(#pA)"/>
+              <rect class="box dash" x="780" y="150" width="128" height="52" rx="10"/>
+              <text class="t" x="844" y="172" text-anchor="middle">EKS</text>
+              <text class="s" x="844" y="190" text-anchor="middle">OIDC &#183; gated</text>
+
+              <path class="e acc" d="M84,202 V222 M236,202 V222 M388,202 V222 M844,202 V222 M84,222 H844"/>
+              <circle class="dot" cx="84" cy="222" r="4"/>
+              <circle class="dot" cx="236" cy="222" r="4"/>
+              <circle class="dot" cx="388" cy="222" r="4"/>
+              <circle class="dot" cx="844" cy="222" r="4"/>
+              <text class="l acc" x="464" y="244" text-anchor="middle">built once &#183; tagged with the commit SHA &#183; promoted, never rebuilt</text>
+            </svg>
+          </div>
+          <figcaption id="pipe-cap">If the upgrade never becomes healthy, Helm rolls it back (<code>--rollback-on-failure</code>). If <code>helm test</code>, the smoke test or the eval gate fails, the job fails and the build never reaches EKS. The EKS job runs only when the repository sets <code>EKS_CLUSTER_NAME</code>, and it signs in to AWS with GitHub OIDC instead of stored keys.</figcaption>
+        </figure>
+
+        <figure class="fig">
+          <div class="fig-scroll">
+            <svg class="dg" viewBox="0 0 900 286" style="--min: 700px" role="img" aria-labelledby="k8s-cap">
+              <defs>
+                <marker id="kA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,1 L9,5 L0,9 z"/></marker>
+                <marker id="kOk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="mk ok" d="M0,1 L9,5 L0,9 z"/></marker>
+              </defs>
+              <path class="e" d="M150,136 H190 V65 H228" marker-end="url(#kA)"/>
+              <text class="l" x="209" y="57" text-anchor="middle">/</text>
+              <path class="e" d="M150,156 H190 V227 H228" marker-end="url(#kA)"/>
+              <text class="l" x="209" y="219" text-anchor="middle">/api</text>
+              <path class="e ok" d="M380,212 H440 V160 H498" marker-end="url(#kOk)"/>
+              <text class="l ok" x="448" y="192">allowed</text>
+              <path class="e bad dash" d="M380,70 H460 V132 H484"/>
+              <path class="x" d="M486,126 l10,12 M496,126 l-10,12"/>
+              <text class="l bad" x="420" y="88" text-anchor="middle">blocked</text>
+              <path class="e bad dash" d="M380,50 H800 V180"/>
+              <path class="x" d="M794,182 l12,12 M806,182 l-12,12"/>
+              <text class="l bad" x="600" y="42" text-anchor="middle">blocked</text>
+              <path class="e ok" d="M380,244 H718" marker-end="url(#kOk)"/>
+              <text class="l ok" x="550" y="236" text-anchor="middle">allowed</text>
+
+              <rect class="box" x="20" y="116" width="130" height="60" rx="10"/>
+              <text class="t" x="85" y="142" text-anchor="middle">Traefik</text>
+              <text class="s" x="85" y="160" text-anchor="middle">ingress :8080</text>
+              <rect class="box" x="230" y="36" width="150" height="58" rx="10"/>
+              <text class="t" x="305" y="62" text-anchor="middle">web</text>
+              <text class="s" x="305" y="80" text-anchor="middle">Next.js &#183; 1 pod</text>
+              <rect class="box" x="230" y="194" width="150" height="66" rx="10"/>
+              <text class="t" x="305" y="218" text-anchor="middle">api &#215; 2</text>
+              <text class="s" x="305" y="236" text-anchor="middle">HPA 2&#8211;4 pods</text>
+              <text class="s" x="305" y="252" text-anchor="middle">migrate init</text>
+              <rect class="box" x="500" y="116" width="150" height="60" rx="10"/>
+              <text class="t" x="575" y="142" text-anchor="middle">mcp &#215; 2</text>
+              <text class="s" x="575" y="160" text-anchor="middle">from api only</text>
+              <rect class="box" x="720" y="194" width="160" height="66" rx="10"/>
+              <text class="t" x="800" y="218" text-anchor="middle">postgres</text>
+              <text class="s" x="800" y="236" text-anchor="middle">from backend</text>
+              <text class="s" x="800" y="252" text-anchor="middle">pods only</text>
+            </svg>
+          </div>
+          <figcaption id="k8s-cap">NetworkPolicies, checked on the kind cluster (Kubernetes v1.37) rather than just declared. From the web pod, calls to the MCP server and Postgres time out, while the API pod reaches MCP. The same web pod still reaches the API and the mock customer API, so the blocks come from policy, not a broken network.</figcaption>
+        </figure>
+
+        <div class="cards3">
+          <div class="card">
+            <h3>Probes</h3>
+            <p>Liveness on <code>/api/health</code>; readiness on <code>/api/ready</code>, which checks only Postgres and Redis, so a slow optional dependency never pulls a healthy pod.</p>
+          </div>
+          <div class="card">
+            <h3>Scaling</h3>
+            <p>An HPA scales the API on CPU (2&#8211;4 pods on kind), a PodDisruptionBudget keeps one pod up through node drains, and rolling updates never drop below capacity.</p>
+          </div>
+          <div class="card">
+            <h3>Secrets</h3>
+            <p>Runtime secrets and database-owner credentials live in separate Secrets. The owner password reaches only the migration initContainer and the seed Job.</p>
+          </div>
+          <div class="card">
+            <h3>Guardrails</h3>
+            <p><code>values.schema.json</code> rejects a bad value at <code>helm install</code> instead of letting pods crash-loop after deployment.</p>
+          </div>
+          <div class="card">
+            <h3>Hardening</h3>
+            <p>Non-root containers, a read-only root filesystem, every Linux capability dropped, and no Kubernetes API token mounted.</p>
+          </div>
+          <div class="card">
+            <h3>Infrastructure</h3>
+            <p>Terraform for EKS, RDS, ElastiCache, S3 and ECR, using EKS Pod Identity and an RDS-managed master password, so no static AWS keys or DB passwords sit in code.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ lessons -->
+      <section id="lessons">
+        <p class="path">docs/INTEGRATION_GUIDE.md &#183; section 18</p>
+        <h2>What broke, and what it taught</h2>
+        <p class="lead">Every one of these happened during the build. Each one makes a better interview answer than a feature list does.</p>
+        <div class="tbl-wrap">
+          <table class="lessons">
+            <thead><tr><th>What broke</th><th>Why</th><th>Lesson</th></tr></thead>
+            <tbody>
+              <tr><td>Seeding crashed with &ldquo;expected list or ndarray&rdquo;</td><td>pgvector's SQLAlchemy type already turned vectors into text; the asyncpg codec wanted a list.</td><td>Two layers &ldquo;helping&rdquo; with the same conversion collide.</td></tr>
+              <tr><td>Answers lost their resolution steps</td><td>The relevance floor (0.05) was tuned for semantic scores; the lexical embedder scored the steps chunk at 0.048.</td><td>Thresholds belong to the embedder. The trace named the dropped chunk.</td></tr>
+              <tr><td>An eval failed on a policy question</td><td>The planner answered from the top chunk, but the right one was K2.</td><td>Evals plus traces point at the failing stage: synthesis, not retrieval.</td></tr>
+              <tr><td>Readiness would have probed MCP</td><td>A slow optional dependency would fail the probe and pull healthy pods.</td><td>Readiness means &ldquo;can serve traffic&rdquo;; optional parts degrade.</td></tr>
+              <tr><td><code>docker compose build</code>: &ldquo;image already exists&rdquo;</td><td>Five services built the same tag in parallel.</td><td>One artifact, one build.</td></tr>
+              <tr><td>Worker spans never reached Jaeger</td><td>RQ's forked child exited before the span exporter flushed.</td><td>Short-lived processes must flush telemetry.</td></tr>
+              <tr><td>Pods crash-looped on kind</td><td><code>environment: kind</code> wasn't an allowed setting.</td><td>Failing at startup is good; failing at <code>helm install</code> is better.</td></tr>
+              <tr><td>A new image never rolled out</td><td>The mutable tag <code>local</code> left the pod spec unchanged.</td><td>Kubernetes rolls on spec changes; tag images with the commit.</td></tr>
+              <tr><td>&ldquo;-f: command not found&rdquo; mid-deploy</td><td>The script was edited while bash was still running it.</td><td>Bash reads a script as it goes.</td></tr>
+              <tr><td>ingress-nginx was the first pick</td><td>It was archived in March 2026.</td><td>Check that a dependency is still maintained.</td></tr>
+              <tr><td>Code written from memory didn't match reality</td><td>MCP SDK v2 renamed FastMCP; Anthropic SDK 1.x dropped <code>temperature</code>; Helm 4 renamed <code>--atomic</code>; Actions were majors ahead.</td><td>Read the installed source or the registry first.</td></tr>
+              <tr><td>The Docker demo pointed at localhost</td><td>The laptop seed had stored localhost URLs.</td><td>Seeds should converge to their environment, not just skip.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============================================================ status -->
+      <section id="status">
+        <p class="path">status as of 21 Sep 2026</p>
+        <h2>Verified, and not yet</h2>
+        <p class="lead">Put only the left column on a r&#233;sum&#233; today. The right column is a to-do list, not a claim.</p>
+        <div class="status">
+          <div class="col">
+            <h3><span class="pill ok">verified</span> Ran and passed</h3>
+            <ul>
+              <li><svg class="ic ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M5.4 9.3l2.3 2.3 4.9-4.9"/></svg><span>83 tests: 54 unit and 29 integration against real Postgres, Redis, the MCP server and a mock customer API</span></li>
+              <li><svg class="ic ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M5.4 9.3l2.3 2.3 4.9-4.9"/></svg><span>10/10 agent evals on Docker and on Kubernetes, with zero unsupported identifiers</span></li>
+              <li><svg class="ic ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M5.4 9.3l2.3 2.3 4.9-4.9"/></svg><span>Docker Compose from an empty database, with worker ingestion through Redis</span></li>
+              <li><svg class="ic ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M5.4 9.3l2.3 2.3 4.9-4.9"/></svg><span>kind: rollouts, <code>helm test</code>, ingress, HPA, NetworkPolicy enforcement and the approval flow in the UI</span></li>
+              <li><svg class="ic ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M5.4 9.3l2.3 2.3 4.9-4.9"/></svg><span>Distributed traces in Jaeger; Prometheus scraping api, mcp and worker</span></li>
+              <li><svg class="ic ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M5.4 9.3l2.3 2.3 4.9-4.9"/></svg><span>Workflows pass actionlint; the Terraform passes <code>validate</code> (run with OpenTofu)</span></li>
+            </ul>
+          </div>
+          <div class="col">
+            <h3><span class="pill todo">not yet</span> Needs your accounts</h3>
+            <ul>
+              <li><svg class="ic todo" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M9 5v4.4l2.8 1.7"/></svg><span>Live Claude calls. There was no API key in the build environment, so every run used the offline planner. Add a key, switch a tenant to <code>claude-opus-5</code>, and re-run the evals.</span></li>
+              <li><svg class="ic todo" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M9 5v4.4l2.8 1.7"/></svg><span><code>terraform plan</code> and <code>apply</code>. These need an AWS account, at roughly $200+ a month while running.</span></li>
+              <li><svg class="ic todo" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M9 5v4.4l2.8 1.7"/></svg><span>A real GitHub Actions run, which happens on the first push.</span></li>
+              <li><svg class="ic todo" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M9 5v4.4l2.8 1.7"/></svg><span>The demo video and screenshots, which are yours to record.</span></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ story -->
+      <section id="story">
+        <p class="path">the two-minute version</p>
+        <h2>The interview version</h2>
+        <dl class="story">
+          <div><dt>Problem</dt><dd>Every customer has different systems, data shapes, permissions and production constraints, so one agent can't simply be pointed at them.</dd></div>
+          <div><dt>Decision</dt><dd>I separated customer configuration from the agent runtime: connectors map each customer into canonical objects, and tools are discovered over MCP.</dd></div>
+          <div><dt>Risk</dt><dd>Tool access and tenant isolation were the dangers, so I enforced both in code outside the prompt, ending with Postgres Row-Level Security and a database role that can't bypass it.</dd></div>
+          <div><dt>Production</dt><dd>One image, Helm with probes, autoscaling and network policies, and a pipeline that deploys the exact tested digest and gates releases on evals.</dd></div>
+          <div><dt>AI</dt><dd>Context is a budgeted pipeline with a reason for every chunk, and every claim must cite a source that exists in the run.</dd></div>
+          <div><dt>Reliability</dt><dd>Traces and evals make failures reproducible. The trace showed the retriever dropping the resolution-steps chunk at 0.048 against a 0.05 floor.</dd></div>
+        </dl>
+
+        <footer class="end">
+          <span>Full write-up: <code>tenantpilot/docs/INTEGRATION_GUIDE.md</code></span>
+          <span>Run it: <code>make up</code> &#8594; localhost:3000</span>
+          <span>Kubernetes: <code>make kind-up</code> &#8594; localhost:8080</span>
+        </footer>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+(() => {
+  const qa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  // System map: drawing <-> component table
+  const mapEls = qa('[data-map]');
+  const setMap = (key) => mapEls.forEach((el) => el.classList.toggle('is-on', el.dataset.map === key));
+  mapEls.forEach((el) => {
+    const pick = (ev) => { if (ev) ev.stopPropagation(); setMap(el.dataset.map); };
+    el.addEventListener('mouseenter', () => pick());
+    el.addEventListener('focus', () => pick());
+    el.addEventListener('click', pick);
+    el.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); pick(ev); }
+    });
+  });
+  setMap('runtime');
+
+  // Request flow: phase cards <-> numbered hops
+  const seq = document.querySelector('.seq');
+  const msgs = qa('.seq .msg');
+  const phases = qa('.phase');
+  const stepsOf = (phase) => phase.dataset.steps.split(',');
+  const light = (steps, phase) => {
+    const on = new Set(steps);
+    msgs.forEach((m) => m.classList.toggle('is-on', on.has(m.dataset.n)));
+    phases.forEach((p) => p.classList.toggle('is-on', p === phase));
+    if (seq) seq.classList.toggle('has-on', on.size > 0);
+  };
+  phases.forEach((p) => {
+    const on = () => light(stepsOf(p), p);
+    p.addEventListener('mouseenter', on);
+    p.addEventListener('focus', on);
+    p.addEventListener('click', on);
+  });
+  msgs.forEach((m) => {
+    m.addEventListener('mouseenter', () => {
+      const phase = phases.find((p) => stepsOf(p).includes(m.dataset.n));
+      light(phase ? stepsOf(phase) : [m.dataset.n], phase || null);
+    });
+  });
+  const clear = () => light([], null);
+  const phaseList = document.querySelector('.phases');
+  if (phaseList) phaseList.addEventListener('mouseleave', clear);
+  if (seq) seq.addEventListener('mouseleave', clear);
+
+  // Section rail: mark the section being read
+  const links = qa('.rail a');
+  if ('IntersectionObserver' in window && links.length) {
+    const byId = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        links.forEach((a) => a.removeAttribute('aria-current'));
+        const link = byId.get(entry.target.id);
+        if (link) link.setAttribute('aria-current', 'true');
+      });
+    }, { rootMargin: '-35% 0px -60% 0px' });
+    qa('main section[id]').forEach((s) => io.observe(s));
+  }
+})();
+</script>
+
+</body></html>

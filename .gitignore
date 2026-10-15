@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+# Local state
+.env
+.data/
+evals/results/*
+!evals/results/.gitkeep
+!evals/results/baseline-offline-heuristic.md
+# Web
+apps/web/node_modules/
+apps/web/.next/
+apps/web/next-env.d.ts
+# Terraform / OpenTofu
+infra/terraform/.terraform/
+infra/terraform/*.tfstate*
+infra/terraform/*.tfplan
+infra/terraform/.terraform.lock.hcl.bak
+# OS / editors
+.DS_Store
+*.log
+*.egg-info/

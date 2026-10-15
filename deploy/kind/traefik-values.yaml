@@ -1,0 +1,24 @@
+# Traefik v3 as the ingress controller (ingress-nginx was retired/archived in March 2026).
+service:
+  type: NodePort
+ports:
+  web:
+    nodePort: 30080
+    transport:
+      respondingTimeouts:
+        readTimeout: 180s      # agent runs with a real LLM can take a while
+        writeTimeout: 180s
+  websecure:
+    expose:
+      default: false
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+  name: traefik
+providers:
+  kubernetesIngress:
+    enabled: true
+  kubernetesCRD:
+    enabled: false
+accessLog:
+  enabled: true

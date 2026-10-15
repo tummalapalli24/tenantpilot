@@ -1,0 +1,32 @@
+{{- if .Values.ingress.enabled }}
+{{- $fullname := include "tenantpilot.fullname" . }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}
+  labels: {{- include "tenantpilot.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- with .Values.ingress.tls }}
+  tls: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - {{- with .Values.ingress.host }}
+      host: {{ . | quote }}
+      {{- end }}
+      http:
+        paths:
+          # Browser -> /api goes straight to FastAPI; everything else is the Next.js UI.
+          # /metrics is deliberately not routed: Prometheus scrapes pods inside the cluster.
+          - path: /api
+            pathType: Prefix
+            backend:
+              service: {name: {{ $fullname }}-api, port: {name: http}}
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: {{ $fullname }}-web, port: {name: http}}
+{{- end }}

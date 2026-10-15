@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "TenantPilot chart values",
+  "type": "object",
+  "required": ["environment", "image", "webImage", "api", "config", "ingress"],
+  "properties": {
+    "environment": {
+      "description": "Must match packages/core/config.py Settings.environment, or the pods refuse to start.",
+      "enum": ["local", "test", "dev", "kind", "staging", "prod"]
+    },
+    "image": {"$ref": "#/definitions/image"},
+    "webImage": {"$ref": "#/definitions/image"},
+    "api": {
+      "type": "object",
+      "properties": {
+        "replicaCount": {"type": "integer", "minimum": 1},
+        "autoscaling": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "minReplicas": {"type": "integer", "minimum": 1},
+            "maxReplicas": {"type": "integer", "minimum": 1},
+            "targetCPUUtilizationPercentage": {"type": "integer", "minimum": 10, "maximum": 100}
+          }
+        }
+      }
+    },
+    "mcp": {"type": "object", "properties": {"replicaCount": {"type": "integer", "minimum": 1}}},
+    "worker": {"type": "object", "properties": {"replicaCount": {"type": "integer", "minimum": 0}}},
+    "config": {
+      "type": "object",
+      "properties": {
+        "logLevel": {"enum": ["DEBUG", "INFO", "WARNING", "ERROR"]},
+        "defaultModel": {"type": "string", "minLength": 1},
+        "agentRateLimitPerMinute": {"type": "integer", "minimum": 1},
+        "objectStore": {"enum": ["local", "s3"]},
+        "s3Bucket": {"type": "string"},
+        "otelExporterOtlpEndpoint": {"type": "string"}
+      }
+    },
+    "uploads": {
+      "type": "object",
+      "properties": {
+        "persistence": {"type": "boolean"},
+        "accessMode": {"enum": ["ReadWriteOnce", "ReadWriteMany", "ReadWriteOncePod"]}
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "className": {"type": "string"},
+        "host": {"type": "string"}
+      }
+    }
+  },
+  "definitions": {
+    "image": {
+      "type": "object",
+      "required": ["repository"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "tag": {"type": "string"},
+        "pullPolicy": {"enum": ["Always", "IfNotPresent", "Never"]}
+      }
+    }
+  }
+}

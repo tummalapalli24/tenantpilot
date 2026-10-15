@@ -1,0 +1,143 @@
+# TenantPilot Helm values. Environment overlays: values-kind.yaml (local), values-prod.yaml (cloud).
+
+environment: dev            # surfaced to the app as ENVIRONMENT and to traces as deployment.environment
+
+image:                      # backend image: api, worker, mcp-server, mock API, migrations (different commands)
+  repository: ghcr.io/your-org/tenantpilot-backend
+  tag: ""                   # defaults to .Chart.AppVersion; CI sets the git SHA
+  pullPolicy: IfNotPresent
+webImage:
+  repository: ghcr.io/your-org/tenantpilot-web
+  tag: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  annotations: {}           # e.g. eks.amazonaws.com/role-arn for IRSA (S3 / Secrets Manager access)
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile: {type: RuntimeDefault}
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities: {drop: [ALL]}
+
+api:
+  replicaCount: 2
+  service:
+    port: 8000
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {cpu: 500m, memory: 512Mi}
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+worker:
+  replicaCount: 1
+  resources:
+    requests: {cpu: 50m, memory: 192Mi}
+    limits: {cpu: 500m, memory: 512Mi}
+
+mcp:
+  replicaCount: 2
+  service:
+    port: 8765
+  resources:
+    requests: {cpu: 50m, memory: 192Mi}
+    limits: {cpu: 500m, memory: 384Mi}
+
+web:
+  replicaCount: 1
+  service:
+    port: 3000
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {cpu: 300m, memory: 256Mi}
+
+# Stand-in for a customer's system (demo). Disable in real deployments.
+mockCustomerApi:
+  enabled: true
+  service:
+    port: 8081
+  resources:
+    requests: {cpu: 20m, memory: 96Mi}
+    limits: {cpu: 200m, memory: 192Mi}
+
+# In-cluster Postgres (pgvector) and Redis for dev/kind. In the cloud use RDS + ElastiCache
+# (see infra/terraform) and set postgres.enabled/redis.enabled=false + externalDatabase/externalRedis.
+postgres:
+  enabled: true
+  image: pgvector/pgvector:pg16
+  storage: 2Gi
+  storageClassName: ""
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {cpu: "1", memory: 1Gi}
+redis:
+  enabled: true
+  image: redis:7-alpine
+  resources:
+    requests: {cpu: 20m, memory: 64Mi}
+    limits: {cpu: 200m, memory: 128Mi}
+
+externalDatabase:           # used when postgres.enabled=false
+  host: ""
+  port: 5432
+  database: tenantpilot
+  ownerUser: tenantpilot    # runs migrations
+externalRedis:
+  url: ""                   # e.g. rediss://master.tenantpilot.xxxxxx.use1.cache.amazonaws.com:6379/0
+
+# Uploaded documents. "local" needs a volume shared by api + worker (ReadWriteOnce is fine
+# on a single node, e.g. kind); in the cloud use objectStore=s3 and no volume at all.
+uploads:
+  persistence: true
+  size: 1Gi
+  accessMode: ReadWriteOnce
+  storageClassName: ""
+
+config:
+  logLevel: INFO
+  defaultModel: claude-opus-5
+  agentRateLimitPerMinute: 30
+  objectStore: local        # local | s3
+  s3Bucket: ""
+  awsRegion: us-east-1
+  otelExporterOtlpEndpoint: ""   # e.g. http://otel-collector.observability:4318
+  corsOrigins: []
+
+secrets:
+  # Name of a Secret you manage yourself (e.g. synced by External Secrets Operator from
+  # AWS Secrets Manager). When empty, the chart generates secrets on first install and
+  # keeps them stable across upgrades.
+  existingSecret: ""
+  existingMigrationsSecret: ""
+  anthropicApiKey: ""       # prefer existingSecret in real environments
+
+ingress:
+  enabled: true
+  className: traefik        # ingress-nginx was retired in March 2026; Traefik v3 is the default here
+  host: ""                  # empty = match any host (kind: http://localhost:8080)
+  annotations: {}
+  tls: []
+
+seed:
+  enabled: true             # demo tenants/users/docs (post-install/upgrade hook). Disable in prod.
+  model: ""                 # force a model for seeded tenants (e.g. offline-heuristic)
+
+networkPolicy:
+  enabled: false            # restrict MCP -> only API pods; Postgres/Redis -> only backend pods
+
+metrics:
+  podAnnotations: true      # prometheus.io/scrape annotations on api, mcp and worker pods

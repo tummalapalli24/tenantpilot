@@ -1,0 +1,232 @@
+{{- $fullname := include "tenantpilot.fullname" . }}
+# ---------------------------------------------------------------- worker (RQ ingestion)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-worker
+  labels:
+    {{- include "tenantpilot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "worker") | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "worker") | nindent 8 }}
+      annotations:
+        {{- include "tenantpilot.podAnnotations" . | nindent 8 }}
+        {{- include "tenantpilot.metricsAnnotations" (dict "ctx" . "port" 9102) | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "tenantpilot.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: worker
+          image: {{ include "tenantpilot.backendImage" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-m", "services.worker"]
+          ports:
+            - {name: metrics, containerPort: 9102}
+          {{- include "tenantpilot.backendEnv" . | nindent 10 }}
+          livenessProbe:
+            tcpSocket: {port: metrics}
+            periodSeconds: 20
+          resources: {{- toYaml .Values.worker.resources | nindent 12 }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            {{- include "tenantpilot.tmpVolumeMount" . | nindent 12 }}
+            - {name: uploads, mountPath: /data/uploads}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+        {{- include "tenantpilot.uploadsVolume" . | nindent 8 }}
+---
+# ---------------------------------------------------------------- MCP server
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-mcp
+  labels:
+    {{- include "tenantpilot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp
+spec:
+  replicas: {{ .Values.mcp.replicaCount }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 1, maxUnavailable: 0}
+  selector:
+    matchLabels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "mcp") | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "mcp") | nindent 8 }}
+      annotations:
+        {{- include "tenantpilot.podAnnotations" . | nindent 8 }}
+        {{- include "tenantpilot.metricsAnnotations" (dict "ctx" . "port" .Values.mcp.service.port) | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "tenantpilot.serviceAccountName" . }}
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: mcp
+          image: {{ include "tenantpilot.backendImage" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-m", "services.mcp_server"]
+          ports:
+            - {name: http, containerPort: 8765}
+          {{- include "tenantpilot.backendEnv" . | nindent 10 }}
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: {path: /ready, port: http}
+            periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec: {command: ["sleep", "5"]}
+          resources: {{- toYaml .Values.mcp.resources | nindent 12 }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts: {{- include "tenantpilot.tmpVolumeMount" . | nindent 12 }}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-mcp
+  labels:
+    {{- include "tenantpilot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp
+spec:
+  type: ClusterIP
+  selector: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "mcp") | nindent 4 }}
+  ports:
+    - {name: http, port: {{ .Values.mcp.service.port }}, targetPort: http}
+---
+# ---------------------------------------------------------------- web (Next.js)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-web
+  labels:
+    {{- include "tenantpilot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  replicas: {{ .Values.web.replicaCount }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "web") | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "web") | nindent 8 }}
+    spec:
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      automountServiceAccountToken: false
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: web
+          image: {{ include "tenantpilot.webImage" . }}
+          imagePullPolicy: {{ .Values.webImage.pullPolicy }}
+          ports:
+            - {name: http, containerPort: 3000}
+          env:
+            - {name: API_INTERNAL_URL, value: {{ printf "http://%s-api:%v" $fullname .Values.api.service.port | quote }}}
+          livenessProbe:
+            httpGet: {path: /login, port: http}
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: {path: /login, port: http}
+            periodSeconds: 10
+          resources: {{- toYaml .Values.web.resources | nindent 12 }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            {{- include "tenantpilot.tmpVolumeMount" . | nindent 12 }}
+            - {name: next-cache, mountPath: /app/.next/cache}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+        - {name: next-cache, emptyDir: {}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-web
+  labels:
+    {{- include "tenantpilot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  type: ClusterIP
+  selector: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "web") | nindent 4 }}
+  ports:
+    - {name: http, port: {{ .Values.web.service.port }}, targetPort: http}
+{{- if .Values.mockCustomerApi.enabled }}
+---
+# ---------------------------------------------------------------- mock customer system (demo)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-mock-customer-api
+  labels:
+    {{- include "tenantpilot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mock-customer-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "mock-customer-api") | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "mock-customer-api") | nindent 8 }}
+    spec:
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      automountServiceAccountToken: false
+      containers:
+        - name: mock-customer-api
+          image: {{ include "tenantpilot.backendImage" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-m", "services.mock_customer_api"]
+          ports:
+            - {name: http, containerPort: 8081}
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+          resources: {{- toYaml .Values.mockCustomerApi.resources | nindent 12 }}
+          securityContext: {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts: {{- include "tenantpilot.tmpVolumeMount" . | nindent 12 }}
+      volumes:
+        - {name: tmp, emptyDir: {}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-mock-customer-api
+  labels:
+    {{- include "tenantpilot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mock-customer-api
+spec:
+  type: ClusterIP
+  selector: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "mock-customer-api") | nindent 4 }}
+  ports:
+    - {name: http, port: {{ .Values.mockCustomerApi.service.port }}, targetPort: http}
+{{- end }}
+{{- if .Values.uploads.persistence }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $fullname }}-uploads
+  labels: {{- include "tenantpilot.labels" . | nindent 4 }}
+spec:
+  accessModes: [{{ .Values.uploads.accessMode }}]
+  {{- with .Values.uploads.storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.uploads.size }}
+{{- end }}

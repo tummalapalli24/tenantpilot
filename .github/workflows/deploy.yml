@@ -1,0 +1,186 @@
+# Main-branch pipeline:
+#   CI (tests) -> build & push images (GHCR, tagged with the commit SHA)
+#     -> deploy to an ephemeral kind cluster: helm upgrade -> rollout -> helm test -> smoke + eval gate
+#     -> [optional] deploy to EKS when the repo variable EKS_CLUSTER_NAME is set
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false   # never cancel a deploy halfway
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  build-push:
+    name: Build & push ${{ matrix.name }}
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - {name: backend, context: ".", file: docker/backend.Dockerfile}
+          - {name: web, context: apps/web, file: apps/web/Dockerfile}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Image name (GHCR requires lowercase)
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/tenantpilot-${{ matrix.name }}" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=sha,format=long,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  deploy-kind:
+    name: Deploy to Kubernetes (kind) + smoke/eval gate
+    needs: build-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    env:
+      TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+      - uses: azure/setup-helm@v5
+        with:
+          version: v4.3.0
+      - uses: helm/kind-action@v1.15.0
+        with:
+          cluster_name: tenantpilot
+          config: deploy/kind/kind-config.yaml
+      - name: Ingress controller (Traefik) + metrics-server
+        run: |
+          helm repo add traefik https://traefik.github.io/charts
+          helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+          helm upgrade --install traefik traefik/traefik -n traefik --create-namespace \
+            -f deploy/kind/traefik-values.yaml --wait --timeout 5m
+          helm upgrade --install metrics-server metrics-server/metrics-server -n kube-system \
+            --set 'args={--kubelet-insecure-tls}' --wait --timeout 5m
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Load the exact images CI built into the cluster
+        run: |
+          for name in backend web; do
+            docker pull "ghcr.io/$OWNER/tenantpilot-$name:$TAG"
+            kind load docker-image "ghcr.io/$OWNER/tenantpilot-$name:$TAG" --name tenantpilot
+          done
+      - name: helm upgrade --install (rolls back automatically if the rollout fails)
+        run: |
+          helm upgrade --install tenantpilot helm/tenantpilot -n tenantpilot --create-namespace \
+            -f helm/tenantpilot/values-kind.yaml \
+            --set image.repository="ghcr.io/$OWNER/tenantpilot-backend" --set image.tag="$TAG" \
+            --set image.pullPolicy=IfNotPresent \
+            --set webImage.repository="ghcr.io/$OWNER/tenantpilot-web" --set webImage.tag="$TAG" \
+            --set webImage.pullPolicy=IfNotPresent \
+            --rollback-on-failure --wait --timeout 10m
+      - name: Rollout status
+        run: |
+          for d in api mcp worker web; do
+            kubectl -n tenantpilot rollout status "deploy/tenantpilot-$d" --timeout 180s
+          done
+      - name: helm test
+        run: helm test tenantpilot -n tenantpilot --logs
+      - name: Smoke test through the ingress
+        run: |
+          for _ in $(seq 1 30); do curl -sf http://localhost:8080/api/health && break; sleep 2; done
+          curl -sf http://localhost:8080/api/ready
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Agent eval gate (fails the deploy below 90% pass rate)
+        run: |
+          uv sync --frozen
+          uv run python -m evals.run_evals --base-url http://localhost:8080 --min-pass-rate 0.9
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: eval-results
+          path: evals/results/
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          kubectl -n tenantpilot get pods,events --sort-by=.lastTimestamp || true
+          kubectl -n tenantpilot logs deploy/tenantpilot-api --all-containers --tail=200 || true
+          kubectl -n tenantpilot logs deploy/tenantpilot-mcp --tail=200 || true
+
+  deploy-eks:
+    name: Deploy to EKS (production)
+    needs: deploy-kind
+    if: vars.EKS_CLUSTER_NAME != ''
+    runs-on: ubuntu-latest
+    environment: production        # add required reviewers in repo settings for a manual gate
+    permissions:
+      contents: read
+      packages: read
+      id-token: write              # GitHub OIDC -> AWS IAM role, no long-lived AWS keys
+    env:
+      TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Promote the tested images to ECR (same digest that passed kind)
+        run: |
+          for name in backend web; do
+            src="ghcr.io/$OWNER/tenantpilot-$name:$TAG"
+            dst="${{ steps.ecr.outputs.registry }}/tenantpilot-$name:$TAG"
+            docker pull "$src" && docker tag "$src" "$dst" && docker push "$dst"
+          done
+      - uses: azure/setup-helm@v5
+        with:
+          version: v4.3.0
+      - name: helm upgrade (production values)
+        run: |
+          aws eks update-kubeconfig --name "${{ vars.EKS_CLUSTER_NAME }}" --region "${{ vars.AWS_REGION }}"
+          helm upgrade --install tenantpilot helm/tenantpilot -n tenantpilot --create-namespace \
+            -f helm/tenantpilot/values-prod.yaml \
+            --set image.repository="${{ steps.ecr.outputs.registry }}/tenantpilot-backend" --set image.tag="$TAG" \
+            --set webImage.repository="${{ steps.ecr.outputs.registry }}/tenantpilot-web" --set webImage.tag="$TAG" \
+            --rollback-on-failure --wait --timeout 15m
+          kubectl -n tenantpilot rollout status deploy/tenantpilot-api --timeout 300s
+          helm test tenantpilot -n tenantpilot --logs

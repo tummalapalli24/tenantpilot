@@ -1,0 +1,153 @@
+# TenantPilot local stack:   docker compose up --build
+# With tracing + dashboards: docker compose --profile observability up --build
+#
+#   web (Next.js) :3000  ->  api (FastAPI) :8000  ->  mcp-server :8765  ->  mock-customer-api :8081
+#                                   |                      |
+#                                postgres (pgvector) :5432 + redis :6379 <- worker (RQ)
+name: tenantpilot
+
+x-backend-env: &backend-env
+  ENVIRONMENT: local
+  LOG_FORMAT: json
+  LOG_LEVEL: INFO
+  DATABASE_URL: postgresql+asyncpg://tenantpilot_app:app-password@postgres:5432/tenantpilot
+  MIGRATIONS_DATABASE_URL: postgresql+asyncpg://tenantpilot:owner-password@postgres:5432/tenantpilot
+  APP_DB_PASSWORD: app-password
+  REDIS_URL: redis://redis:6379/0
+  MCP_SERVER_URL: http://mcp-server:8765/mcp
+  MCP_ALLOWED_HOSTS: '["mcp-server:*","localhost:*","127.0.0.1:*"]'
+  PUBLIC_API_URL: http://localhost:8000
+  OBJECT_STORE_DIR: /data/uploads
+  JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-jwt-secret-0123456789}
+  SERVICE_TOKEN_SECRET: ${SERVICE_TOKEN_SECRET:-dev-only-change-me-service-secret-012345}
+  SECRETS_MASTER_KEY: ${SECRETS_MASTER_KEY:-q7cTHQZ4y5zB8m3vX0ZKf4U2m3JZ0v5o8y5W2cYqRkA=}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  DEFAULT_MODEL: ${DEFAULT_MODEL:-claude-opus-5}
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+  CORS_ORIGINS: '["http://localhost:3000"]'
+
+# One image, several process types. Only `migrate` declares the build; every other backend
+# service reuses the same tagged image (building it five times would race on the tag).
+x-backend: &backend
+  image: tenantpilot-backend:local
+  pull_policy: never
+  environment: *backend-env
+  volumes:
+    - uploads:/data/uploads
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: tenantpilot          # owner/migration role
+      POSTGRES_PASSWORD: owner-password
+      POSTGRES_DB: tenantpilot
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tenantpilot -d tenantpilot"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    pull_policy: build
+    command: ["sh", "-c", "python -m apps.api.cli migrate && python -m apps.api.cli seed-demo"]
+    environment:
+      <<: *backend-env
+      ACME_API_BASE_URL: http://mock-customer-api:8081/acme/v1
+      BETACORP_CRM_DSN: postgresql://betacorp_reader@postgres:5432/tenantpilot
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+
+  api:
+    <<: *backend
+    command: ["python", "-m", "apps.api"]
+    ports: ["8000:8000"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/ready')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  worker:
+    <<: *backend
+    command: ["python", "-m", "services.worker"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+
+  mcp-server:
+    <<: *backend
+    command: ["python", "-m", "services.mcp_server"]
+    ports: ["8765:8765"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+  mock-customer-api:
+    <<: *backend
+    command: ["python", "-m", "services.mock_customer_api"]
+    ports: ["8081:8081"]
+    volumes: []
+    depends_on:
+      migrate: {condition: service_started}
+
+  web:
+    image: tenantpilot-web:local
+    build:
+      context: apps/web
+    environment:
+      API_INTERNAL_URL: http://api:8000
+    ports: ["3000:3000"]
+    depends_on:
+      api: {condition: service_healthy}
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------- observability profile
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    profiles: [observability]
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports: ["16686:16686", "4318:4318"]
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: [observability]
+    volumes:
+      - ./deploy/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["9090:9090"]
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    profiles: [observability]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ADMIN_PASSWORD: tenantpilot
+    volumes:
+      - ./deploy/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3001:3000"]
+
+volumes:
+  pgdata:
+  uploads:

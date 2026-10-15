@@ -1,0 +1,66 @@
+{{- if .Values.networkPolicy.enabled }}
+{{- $fullname := include "tenantpilot.fullname" . }}
+# Only the agent runtime (api pods) may call the MCP server - the tool layer is not
+# reachable from the web tier or anything else in the cluster.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-mcp
+  labels: {{- include "tenantpilot.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "mcp") | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "api") | nindent 14 }}
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: monitoring}
+      ports:
+        - {port: {{ .Values.mcp.service.port }}}
+{{- if .Values.postgres.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-postgres
+  labels: {{- include "tenantpilot.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "postgres") | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        {{- range list "api" "worker" "mcp" "seed" }}
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+              app.kubernetes.io/component: {{ . }}
+        {{- end }}
+      ports:
+        - {port: 5432}
+{{- end }}
+{{- if .Values.redis.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-redis
+  labels: {{- include "tenantpilot.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "tenantpilot.selectorLabels" (dict "ctx" . "component" "redis") | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        {{- range list "api" "worker" }}
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ $.Release.Name }}
+              app.kubernetes.io/component: {{ . }}
+        {{- end }}
+      ports:
+        - {port: 6379}
+{{- end }}
+{{- end }}

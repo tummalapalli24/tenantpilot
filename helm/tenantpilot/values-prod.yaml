@@ -1,0 +1,44 @@
+# Cloud (EKS) overlay - managed data stores provisioned by infra/terraform.
+environment: prod
+image:
+  repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/tenantpilot-backend   # terraform output
+webImage:
+  repository: 123456789012.dkr.ecr.us-east-1.amazonaws.com/tenantpilot-web
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/tenantpilot-app   # S3 access via IRSA
+api:
+  autoscaling: {enabled: true, minReplicas: 3, maxReplicas: 12, targetCPUUtilizationPercentage: 65}
+  podDisruptionBudget: {enabled: true, minAvailable: 2}
+mcp:
+  replicaCount: 3
+worker:
+  replicaCount: 2
+mockCustomerApi:
+  enabled: false
+postgres:
+  enabled: false
+redis:
+  enabled: false
+externalDatabase:
+  host: tenantpilot.xxxxxxxx.us-east-1.rds.amazonaws.com
+externalRedis:
+  url: rediss://master.tenantpilot.xxxxxx.use1.cache.amazonaws.com:6379/0
+uploads:
+  persistence: false
+config:
+  objectStore: s3
+  s3Bucket: tenantpilot-prod-documents
+  otelExporterOtlpEndpoint: http://otel-collector.observability:4318
+secrets:
+  existingSecret: tenantpilot-app               # synced from AWS Secrets Manager (External Secrets Operator)
+  existingMigrationsSecret: tenantpilot-migrations
+ingress:
+  host: tenantpilot.example.com
+  tls:
+    - hosts: [tenantpilot.example.com]
+      secretName: tenantpilot-tls
+seed:
+  enabled: false
+networkPolicy:
+  enabled: true
