@@ -4,8 +4,7 @@ A multi-tenant platform for running AI agents against customer systems.
 
 You add a customer, connect their API or database, upload their documents, pick which tools their agent is allowed to use, and deploy the whole thing to Kubernetes. Every request, tool call, retrieved document and human approval is visible from one control plane.
 
-[![CI](https://github.com/tummalapalli24/tenantpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/tummalapalli24/tenantpilot/actions/workflows/ci.yml)
-[![Deploy](https://github.com/tummalapalli24/tenantpilot/actions/workflows/deploy.yml/badge.svg)](https://github.com/tummalapalli24/tenantpilot/actions/workflows/deploy.yml)
+[![Tests and deploy](https://github.com/tummalapalli24/tenantpilot/actions/workflows/deploy.yml/badge.svg)](https://github.com/tummalapalli24/tenantpilot/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](pyproject.toml)
 
@@ -335,6 +334,7 @@ Verified by running it:
 - On a local Kubernetes cluster: rollouts, `helm test`, ingress, autoscaling, network policy enforcement and the approval flow in the UI.
 - Distributed traces appear in Jaeger as a single trace across two services, and Prometheus scrapes the API, the MCP server and the worker.
 - Workflows pass actionlint, and the Terraform passes `validate`.
+- The pipeline itself. On a push to main, GitHub Actions ran the full test suite, built both images, pushed them, created a Kubernetes cluster inside the runner, installed the chart, ran `helm test`, a smoke test through the ingress and the evaluation gate, and passed every step.
 
 Not done yet:
 

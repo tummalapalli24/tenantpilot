@@ -401,9 +401,11 @@ succeeds.
   **GitHub OIDC** (no stored AWS keys) and **promotes the same image digest** that
   passed kind to ECR.
 
-*Verified:* `actionlint` passes; every step's commands were run locally (same Helm
-version, same kind flow, same eval gate). *Not yet verified:* an actual run on GitHub,
-which happens when you push the repo.
+*Verified:* `actionlint` passes, and the pipeline has now run for real on GitHub. The
+push to `main` ran lint, 54 unit tests, 29 integration tests against live Postgres,
+Redis and MCP, the web build, the Helm checks and both image builds, then pushed the
+images, created a kind cluster in the runner, installed the chart, and passed `helm
+test`, the smoke test and the eval gate: https://github.com/tummalapalli24/tenantpilot/actions/runs/38670396723
 
 ---
 
@@ -477,7 +479,7 @@ latency. The offline baseline is 10/10. Run it again after switching a tenant to
 | FastAPI, Postgres, RAG, one MCP server, three+ tools, tenant isolation | Done (4 tools, RLS) |
 | Docker, Docker Compose (one command) | Done, verified from scratch |
 | Kubernetes, Helm, probes, resources, HPA | Done, verified on kind |
-| GitHub Actions (PR + main pipelines) | Written, actionlint-clean, steps verified locally; first real run on push |
+| GitHub Actions (PR + main pipelines) | Ran green on GitHub: tests, image builds, kind deploy, helm test, smoke test and eval gate |
 | Basic traces → OpenTelemetry + Grafana | Done (Jaeger, Prometheus, Grafana) |
 | Tests (unit, integration, security, failure) | 83 passing |
 | Approval workflow, RBAC, audit logs, rate limiting, secret manager | Done |

@@ -1446,6 +1446,7 @@ CREATE ROLE tenantpilot_app LOGIN NOSUPERUSER NOBYPASSRLS;</code></pre>
               <li><svg class="ic ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M5.4 9.3l2.3 2.3 4.9-4.9"/></svg><span>kind: rollouts, <code>helm test</code>, ingress, HPA, NetworkPolicy enforcement and the approval flow in the UI</span></li>
               <li><svg class="ic ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M5.4 9.3l2.3 2.3 4.9-4.9"/></svg><span>Distributed traces in Jaeger; Prometheus scraping api, mcp and worker</span></li>
               <li><svg class="ic ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M5.4 9.3l2.3 2.3 4.9-4.9"/></svg><span>Workflows pass actionlint; the Terraform passes <code>validate</code> (run with OpenTofu)</span></li>
+              <li><svg class="ic ok" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M5.4 9.3l2.3 2.3 4.9-4.9"/></svg><span>The GitHub Actions pipeline ran green on a push to main: tests, image builds, a kind deploy in the runner, <code>helm test</code>, smoke test and the eval gate</span></li>
             </ul>
           </div>
           <div class="col">
@@ -1453,8 +1454,7 @@ CREATE ROLE tenantpilot_app LOGIN NOSUPERUSER NOBYPASSRLS;</code></pre>
             <ul>
               <li><svg class="ic todo" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M9 5v4.4l2.8 1.7"/></svg><span>Live Claude calls. There was no API key in the build environment, so every run used the offline planner. Add a key, switch a tenant to <code>claude-opus-5</code>, and re-run the evals.</span></li>
               <li><svg class="ic todo" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M9 5v4.4l2.8 1.7"/></svg><span><code>terraform plan</code> and <code>apply</code>. These need an AWS account, at roughly $200+ a month while running.</span></li>
-              <li><svg class="ic todo" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M9 5v4.4l2.8 1.7"/></svg><span>A real GitHub Actions run, which happens on the first push.</span></li>
-              <li><svg class="ic todo" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M9 5v4.4l2.8 1.7"/></svg><span>The demo video and screenshots, which are yours to record.</span></li>
+                            <li><svg class="ic todo" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5"/><path d="M9 5v4.4l2.8 1.7"/></svg><span>The demo video and screenshots, which are yours to record.</span></li>
             </ul>
           </div>
         </div>
